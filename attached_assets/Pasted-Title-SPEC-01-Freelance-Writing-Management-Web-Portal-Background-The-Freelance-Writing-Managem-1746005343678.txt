@@ -1,0 +1,66 @@
+Title: "SPEC-01: Freelance Writing Management Web Portal"
+Background
+The Freelance Writing Management Web Portal is envisioned as a comprehensive solution designed to 
+streamline the coordination and management of freelance writing projects within an organization that 
+specializes in content creation. With a dynamic team comprising sales personnel, team leads, writers, 
+and proofreaders, the need for a centralized system to manage tasks, files, and communication 
+efficiently has become paramount. This web portal aims to facilitate seamless task assignment, 
+submission, and tracking, alongside integrating financial calculations and performance analytics to 
+enhance productivity and operational transparency.
+Requirements
+Must Have (M):
+1. User authentication and role-based access control to ensure security and appropriate access for 
+different roles.
+2. Dashboards tailored to different roles (sales team, team leads, writers, proofreaders) for a 
+personalized user experience.
+3. Task assignment and management features for the creation, assignment, and deadline 
+management of writing tasks.
+4. File upload and download capabilities to facilitate the submission of writing tasks and revisions.
+5. A database to maintain a record of all tasks, submissions, and related information for effective 
+data management.
+6. Data analytics features to monitor team performance and workload distribution to enhance 
+operational efficiency.
+7. Financial calculations ability.
+Should Have (S):
+Deadline modification capabilities exclusive to the sales team to accommodate changes in project 
+timelines.
+Could Have (C):
+Feedback mechanisms for completed tasks, including ratings and comments, to improve quality and 
+collaboration.
+Method
+Technology Stack
+Frontend: React.js - Offers a dynamic and responsive user interface for the dashboards.
+Backend: Node.js with Express - Provides a scalable server-side solution.
+Database: MongoDB - A NoSQL database that can handle flexible schemas for the diverse data types 
+we'll be managing.
+Authentication: JWT (JSON Web Tokens) for secure and scalable user authentication.
+File Storage: AWS S3 for reliable and accessible file storage.
+Financial Management: Within the web portal, we will include a module for financial calculations 
+related to the projects and tasks. This module will allow the sales team or team leads to input budget 
+details for each project, and then automatically calculate and display to the CEO’s dashboard how the 
+budget is divided among team members based on their roles and contributions. However, it's important 
+to note that the portal will not handle actual financial transactions or integrate with payment gateways. 
+The financial calculations are meant for internal tracking and planning purposes only.
+Analytics: A simple analytics engine built with Python, utilizing libraries like Pandas and Matplotlib for 
+data analysis and visualization.
+Database Schema
+Users Collection: Stores user details including role, authentication information, and personal details.
+Tasks Collection: Contains task details such as assigned writer, deadlines, status, submission files, and 
+any revisions.
+Projects Collection: Holds information on each project, including related tasks, overall deadline, and the 
+involved team members.
+Task Assignment and Management
+• Tasks are created by the sales team or team leads and assigned to writers based on availability 
+and expertise.
+• All of the available tasks will be available on all dashboards. Only Team leads or Sales can assign 
+a task to the writer.
+• Writers submit their work through the portal, where it is then available for proofreading. 
+Revisions are managed through the same task entity, allowing for historical tracking of changes.
+Architecture Diagram
+Component Diagram
+A user interface layer (React.js) that interacts with the backend services (Node.js/Express).
+Backend services that communicate with the MongoDB database for data retrieval and storage.
+An authentication service handling user logins and role-based access control.
+File storage interactions with AWS S3 for uploading and downloading files.
+The analytics engine that pulls data from the database for analysis and generates reports for 
+dashboards.
