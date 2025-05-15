@@ -24,11 +24,9 @@ import {
   TaskStatus
 } from "@shared/schema";
 import session from "express-session";
-import { db, pool } from "./db";
-import { eq, desc, asc, gt } from "drizzle-orm";
-import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 
-const PostgresSessionStore = connectPg(session);
+const MemoryStore = createMemoryStore(session);
 
 // Define the Storage interface
 export interface IStorage {
@@ -76,177 +74,240 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-// Database storage implementation
-export class DatabaseStorage implements IStorage {
+// In-memory storage implementation
+export class MemStorage implements IStorage {
+  private usersData: Map<number, User>;
+  private projectsData: Map<number, Project>;
+  private tasksData: Map<number, Task>;
+  private filesData: Map<number, File>;
+  private commentsData: Map<number, Comment>;
+  private activitiesData: Map<number, Activity>;
+  private analyticsData: Map<number, Analytics>;
   sessionStore: session.Store;
+  
+  private userIdCounter: number;
+  private projectIdCounter: number;
+  private taskIdCounter: number;
+  private fileIdCounter: number;
+  private commentIdCounter: number;
+  private activityIdCounter: number;
+  private analyticsIdCounter: number;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
+    this.usersData = new Map();
+    this.projectsData = new Map();
+    this.tasksData = new Map();
+    this.filesData = new Map();
+    this.commentsData = new Map();
+    this.activitiesData = new Map();
+    this.analyticsData = new Map();
+    
+    this.userIdCounter = 1;
+    this.projectIdCounter = 1;
+    this.taskIdCounter = 1;
+    this.fileIdCounter = 1;
+    this.commentIdCounter = 1;
+    this.activityIdCounter = 1;
+    this.analyticsIdCounter = 1;
+    
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 hours
     });
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return this.usersData.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    return Array.from(this.usersData.values()).find(
+      (user) => user.username === username,
+    );
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values({
-      ...userData,
-      role: userData.role as UserRole
-    }).returning();
+    const id = this.userIdCounter++;
+    const user = { ...userData, id } as User;
+    this.usersData.set(id, user);
     return user;
   }
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set(userData)
-      .where(eq(users.id, id))
-      .returning();
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...userData };
+    this.usersData.set(id, updatedUser);
     return updatedUser;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    return Array.from(this.usersData.values());
   }
 
   // Project methods
   async getProject(id: number): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
-    return project;
+    return this.projectsData.get(id);
   }
 
   async getAllProjects(): Promise<Project[]> {
-    return await db.select().from(projects);
+    return Array.from(this.projectsData.values());
   }
 
   async createProject(projectData: InsertProject): Promise<Project> {
-    const [project] = await db.insert(projects).values(projectData).returning();
+    const id = this.projectIdCounter++;
+    const project = { ...projectData, id } as Project;
+    this.projectsData.set(id, project);
     return project;
   }
 
   async updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined> {
-    const [updatedProject] = await db
-      .update(projects)
-      .set(projectData)
-      .where(eq(projects.id, id))
-      .returning();
+    const project = await this.getProject(id);
+    if (!project) return undefined;
+    
+    const updatedProject = { ...project, ...projectData };
+    this.projectsData.set(id, updatedProject);
     return updatedProject;
   }
 
   // Task methods
   async getTask(id: number): Promise<Task | undefined> {
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
-    return task;
+    return this.tasksData.get(id);
   }
 
   async getAllTasks(): Promise<Task[]> {
-    return await db.select().from(tasks);
+    return Array.from(this.tasksData.values());
   }
 
   async getTasksByAssignee(userId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.assignedToId, userId));
+    return Array.from(this.tasksData.values())
+      .filter(task => task.assignedToId === userId);
   }
 
   async getTasksByProject(projectId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    return Array.from(this.tasksData.values())
+      .filter(task => task.projectId === projectId);
   }
 
   async createTask(taskData: InsertTask): Promise<Task> {
-    const [task] = await db.insert(tasks).values({
-      ...taskData,
-      status: taskData.status as TaskStatus || TaskStatus.NEW
-    }).returning();
+    const id = this.taskIdCounter++;
+    const now = new Date();
+    const task = { 
+      ...taskData, 
+      id, 
+      createdAt: now
+    } as Task;
+    this.tasksData.set(id, task);
     return task;
   }
 
   async updateTask(id: number, taskData: Partial<Task>): Promise<Task | undefined> {
+    const task = await this.getTask(id);
+    if (!task) return undefined;
+    
     // If status is being updated to COMPLETED, add submission date
-    if (taskData.status === TaskStatus.COMPLETED) {
+    if (taskData.status === 'COMPLETED' && task.status !== 'COMPLETED') {
       taskData.submissionDate = new Date();
     }
     
-    const [updatedTask] = await db
-      .update(tasks)
-      .set(taskData)
-      .where(eq(tasks.id, id))
-      .returning();
+    const updatedTask = { ...task, ...taskData };
+    this.tasksData.set(id, updatedTask);
     return updatedTask;
   }
 
   // File methods
   async getFile(id: number): Promise<File | undefined> {
-    const [file] = await db.select().from(files).where(eq(files.id, id));
-    return file;
+    return this.filesData.get(id);
   }
 
   async getFilesByTask(taskId: number): Promise<File[]> {
-    return await db.select().from(files).where(eq(files.taskId, taskId));
+    return Array.from(this.filesData.values())
+      .filter(file => file.taskId === taskId);
   }
 
   async createFile(fileData: InsertFile): Promise<File> {
-    const [file] = await db.insert(files).values(fileData).returning();
+    const id = this.fileIdCounter++;
+    const now = new Date();
+    const file = { 
+      ...fileData, 
+      id, 
+      uploadedAt: now
+    } as File;
+    this.filesData.set(id, file);
     return file;
   }
 
   // Comment methods
   async getComment(id: number): Promise<Comment | undefined> {
-    const [comment] = await db.select().from(comments).where(eq(comments.id, id));
-    return comment;
+    return this.commentsData.get(id);
   }
 
   async getCommentsByTask(taskId: number): Promise<Comment[]> {
-    return await db
-      .select()
-      .from(comments)
-      .where(eq(comments.taskId, taskId))
-      .orderBy(asc(comments.createdAt));
+    return Array.from(this.commentsData.values())
+      .filter(comment => comment.taskId === taskId)
+      .sort((a, b) => {
+        // Sort by createdAt in ascending order (oldest first)
+        if (!a.createdAt || !b.createdAt) return 0;
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
   }
 
   async createComment(commentData: InsertComment): Promise<Comment> {
-    const [comment] = await db.insert(comments).values(commentData).returning();
+    const id = this.commentIdCounter++;
+    const now = new Date();
+    const comment = { 
+      ...commentData, 
+      id, 
+      createdAt: now
+    } as Comment;
+    this.commentsData.set(id, comment);
     return comment;
   }
 
   // Activity methods
   async getActivity(id: number): Promise<Activity | undefined> {
-    const [activity] = await db.select().from(activities).where(eq(activities.id, id));
-    return activity;
+    return this.activitiesData.get(id);
   }
 
   async getAllActivities(): Promise<Activity[]> {
-    return await db
-      .select()
-      .from(activities)
-      .orderBy(desc(activities.createdAt));
+    return Array.from(this.activitiesData.values())
+      .sort((a, b) => {
+        // Sort by createdAt in descending order (newest first)
+        if (!a.createdAt || !b.createdAt) return 0;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
   }
 
   async createActivity(activityData: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values(activityData).returning();
+    const id = this.activityIdCounter++;
+    const now = new Date();
+    const activity = { 
+      ...activityData, 
+      id, 
+      createdAt: now
+    } as Activity;
+    this.activitiesData.set(id, activity);
     return activity;
   }
 
   // Analytics methods
   async getAnalytics(period: string): Promise<Analytics[]> {
-    return await db
-      .select()
-      .from(analytics)
-      .where(eq(analytics.period, period));
+    return Array.from(this.analyticsData.values())
+      .filter(analytics => analytics.period === period);
   }
 
   async createAnalytics(analyticsData: InsertAnalytics): Promise<Analytics> {
-    const [analytic] = await db.insert(analytics).values(analyticsData).returning();
-    return analytic;
+    const id = this.analyticsIdCounter++;
+    const now = new Date();
+    const analytics = { 
+      ...analyticsData, 
+      id, 
+      createdAt: now
+    } as Analytics;
+    this.analyticsData.set(id, analytics);
+    return analytics;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
