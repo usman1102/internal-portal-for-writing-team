@@ -187,7 +187,7 @@ export function ViewTaskDialog({
               <div>
                 <h3 className="text-lg font-semibold">{task.title}</h3>
                 <p className="text-sm text-gray-500">
-                  Project ID: {task.projectId || 'Unassigned'}
+                  Task ID: #{task.id}
                 </p>
               </div>
               <Badge className={getStatusColor(task.status)}>

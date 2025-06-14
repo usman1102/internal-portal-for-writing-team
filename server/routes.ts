@@ -210,8 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = insertTaskSchema.parse({
         ...req.body,
-        assignedById: req.user.id,
-        projectId: null // Remove project reference
+        assignedById: req.user.id
       });
       
       const task = await storage.createTask(validatedData);

@@ -183,7 +183,7 @@ export function TaskTable({
                           {task.title}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Project ID: {task.projectId || 'Unassigned'}
+                          {task.description}
                         </div>
                       </div>
                     </TableCell>
