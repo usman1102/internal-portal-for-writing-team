@@ -79,7 +79,7 @@ export default function TasksPage() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Tasks (Unassigned)</h2>
                   <TaskTable 
-                    tasks={tasks.filter(task => !task.assignedToId)}
+                    tasks={tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined)}
                     users={users}
                     isLoading={isLoadingTasks || isLoadingUsers}
                     onTaskCreate={handleCreateTask}
@@ -92,7 +92,7 @@ export default function TasksPage() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">My Assigned Tasks</h2>
                   <TaskTable 
-                    tasks={tasks.filter(task => task.assignedToId === user?.id)}
+                    tasks={tasks.filter(task => task.assignedToId === user?.id && task.assignedToId !== null && task.assignedToId !== undefined)}
                     users={users}
                     isLoading={isLoadingTasks || isLoadingUsers}
                     onTaskCreate={handleCreateTask}
