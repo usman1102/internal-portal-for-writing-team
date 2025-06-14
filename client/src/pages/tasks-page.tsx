@@ -19,8 +19,11 @@ export default function TasksPage() {
   // Debug logging for task data
   if (tasks.length > 0) {
     console.log("Tasks received:", tasks);
+    console.log("Current user ID:", user?.id, "type:", typeof user?.id);
     tasks.forEach(task => {
       console.log(`Task ${task.id}: assignedToId=${task.assignedToId} (type: ${typeof task.assignedToId}), deadline=${task.deadline} (type: ${typeof task.deadline})`);
+      console.log(`  - Is assigned to me? ${task.assignedToId === user?.id}`);
+      console.log(`  - Is unassigned? ${task.assignedToId === null || task.assignedToId === undefined}`);
     });
   }
   

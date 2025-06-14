@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const formattedTasks = tasks.map(task => ({
           ...task,
           assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? task.deadline.toString() : null,
+          deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
           submissionDate: task.submissionDate || null,
           createdAt: task.createdAt || null
         }));
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const formattedTasks = salesTasks.map(task => ({
           ...task,
           assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? task.deadline.toString() : null,
+          deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
           submissionDate: task.submissionDate || null,
           createdAt: task.createdAt || null
         }));
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formattedTasks = tasks.map(task => ({
         ...task,
         assignedToId: task.assignedToId || null,
-        deadline: task.deadline ? task.deadline.toString() : null,
+        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
         submissionDate: task.submissionDate || null,
         createdAt: task.createdAt || null
       }));
