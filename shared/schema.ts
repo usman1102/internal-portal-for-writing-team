@@ -94,12 +94,15 @@ export const comments = pgTable("comments", {
 // Activities schema
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: integer("entity_id").notNull(),
   userId: integer("user_id").references(() => users.id),
+  details: text("details"),
+  createdAt: timestamp("created_at").defaultNow(),
   taskId: integer("task_id").references(() => tasks.id),
   projectId: integer("project_id").references(() => projects.id),
-  action: text("action").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Analytics schema
@@ -139,7 +142,10 @@ export const insertCommentSchema = createInsertSchema(comments).omit({ id: true,
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 
-export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
+export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true }).extend({
+  entityType: z.string(),
+  entityId: z.number()
+});
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 

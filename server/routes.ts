@@ -216,10 +216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create activity entry for task creation
       await storage.createActivity({
         userId: req.user.id,
-        taskId: task.id,
-        projectId: null,
+        entityType: 'TASK',
+        entityId: task.id,
         action: 'TASK_CREATED',
-        description: `${req.user.fullName} created a new task: ${task.title}`
+        description: `${req.user.fullName} created a new task: ${task.title}`,
+        taskId: task.id,
+        projectId: null
       });
       
       res.status(201).json(task);
@@ -318,10 +320,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.createActivity({
           userId: req.user.id,
-          taskId: taskId,
-          projectId: null,
+          entityType: 'TASK',
+          entityId: taskId,
           action,
-          description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
+          description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`,
+          taskId: taskId,
+          projectId: null
         });
       }
       
@@ -418,10 +422,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create activity for the comment
       await storage.createActivity({
         userId: req.user.id,
-        taskId: task.id,
-        projectId: task.projectId,
+        entityType: 'TASK',
+        entityId: task.id,
         action: 'COMMENT_ADDED',
-        description: `${req.user.fullName} commented on: ${task.title}`
+        description: `${req.user.fullName} commented on: ${task.title}`,
+        taskId: task.id,
+        projectId: task.projectId
       });
       
       res.status(201).json(comment);
