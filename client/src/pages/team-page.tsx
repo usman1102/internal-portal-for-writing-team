@@ -381,6 +381,7 @@ export default function TeamPage() {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      teamId: user.teamId,
       status: user.status || 'ACTIVE'
     });
     setIsEditMemberOpen(true);
