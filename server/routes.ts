@@ -174,19 +174,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Writers only see tasks assigned to them
       if (userRole === UserRole.WRITER) {
         const tasks = await storage.getTasksByAssignee(req.user.id);
-        return res.json(tasks);
+        const formattedTasks = tasks.map(task => ({
+          ...task,
+          assignedToId: task.assignedToId || null,
+          deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+          submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
+          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+        }));
+        return res.json(formattedTasks);
       }
       
       // Sales users only see tasks they created
       if (userRole === UserRole.SALES) {
         const allTasks = await storage.getAllTasks();
         const salesTasks = allTasks.filter(task => task.assignedById === req.user.id);
-        return res.json(salesTasks);
+        const formattedTasks = salesTasks.map(task => ({
+          ...task,
+          assignedToId: task.assignedToId || null,
+          deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+          submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
+          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+        }));
+        return res.json(formattedTasks);
       }
       
       // Superadmin, Team Leads, and Proofreaders see all tasks
       const tasks = await storage.getAllTasks();
-      res.json(tasks);
+      
+      // Ensure proper data formatting for frontend
+      const formattedTasks = tasks.map(task => ({
+        ...task,
+        assignedToId: task.assignedToId || null,
+        deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+        submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
+        createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+      }));
+      
+      res.json(formattedTasks);
     } catch (error) {
       next(error);
     }

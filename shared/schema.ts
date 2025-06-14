@@ -64,7 +64,7 @@ export const tasks = pgTable("tasks", {
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   priority: text("priority"),
   wordCount: integer("word_count"),
-  deadline: timestamp("deadline", { mode: "date" }),
+  deadline: timestamp("deadline"),
   createdAt: timestamp("created_at").defaultNow(),
   assignedById: integer("assigned_by_id").references(() => users.id),
   submissionDate: timestamp("submission_date", { mode: "date" }),
