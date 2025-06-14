@@ -89,6 +89,9 @@ export function CreateTaskDialog({
     try {
       setIsSubmitting(true);
       
+      console.log("Form data before processing:", data);
+      console.log("Form validation errors:", form.formState.errors);
+      
       // Format the data before submitting
       const taskData = {
         ...data,
@@ -97,9 +100,20 @@ export function CreateTaskDialog({
         assignedToId: data.assignedToId || null,
       };
       
+      console.log("Formatted task data:", taskData);
+      
       // Call the onCreateTask callback if provided
       if (onCreateTask) {
+        console.log("Calling onCreateTask with data:", taskData);
         await onCreateTask(taskData);
+      } else {
+        console.error("onCreateTask callback is not provided");
+        toast({
+          title: "Error",
+          description: "Task creation handler is not available",
+          variant: "destructive",
+        });
+        return;
       }
       
       toast({
@@ -111,6 +125,7 @@ export function CreateTaskDialog({
       onClose();
       form.reset();
     } catch (error) {
+      console.error("Error creating task:", error);
       toast({
         title: "Error creating task",
         description: (error as Error).message,
@@ -132,7 +147,9 @@ export function CreateTaskDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.log("Form validation failed:", errors);
+          })} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -254,7 +271,11 @@ export function CreateTaskDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                onClick={() => console.log("Create Task button clicked")}
+              >
                 {isSubmitting ? "Creating..." : "Create Task"}
               </Button>
             </DialogFooter>
