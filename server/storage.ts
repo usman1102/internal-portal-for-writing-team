@@ -137,6 +137,9 @@ export class MemStorage implements IStorage {
     // Create default superadmin user
     this.createDefaultUsers();
     
+    // Create sample projects
+    this.createSampleProjects();
+    
     // Migrate existing plaintext passwords
     this.migrateExistingPasswords();
   }
