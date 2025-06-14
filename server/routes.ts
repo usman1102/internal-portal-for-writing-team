@@ -34,13 +34,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { role: newUserRole } = req.body;
       const currentUserRole = req.user?.role;
       
-      console.log('User creation attempt:', {
-        currentUserRole,
-        newUserRole,
-        SuperadminRole: UserRole.SUPERADMIN,
-        isMatch: currentUserRole === UserRole.SUPERADMIN
-      });
-      
       // Only superadmin and team leads can create users
       if (currentUserRole !== UserRole.SUPERADMIN && currentUserRole !== UserRole.TEAM_LEAD) {
         return res.status(403).send("Unauthorized to create users");
@@ -150,16 +143,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const userRole = req.user?.role;
-      
-      console.log('Task creation attempt:', {
-        userRole,
-        SuperadminRole: UserRole.SUPERADMIN,
-        TeamLeadRole: UserRole.TEAM_LEAD,
-        SalesRole: UserRole.SALES,
-        isSuperadmin: userRole === UserRole.SUPERADMIN,
-        isTeamLead: userRole === UserRole.TEAM_LEAD,
-        isSales: userRole === UserRole.SALES
-      });
       
       // Only superadmin, team leads, and sales can create tasks
       if (userRole !== UserRole.SUPERADMIN && 
