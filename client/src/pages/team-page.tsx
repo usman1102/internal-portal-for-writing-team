@@ -60,7 +60,11 @@ import {
   Users, 
   UserCheck, 
   ClipboardList, 
-  Mail
+  Mail,
+  Building,
+  Plus,
+  Edit3,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -72,6 +76,9 @@ export default function TeamPage() {
   const [isEditMemberOpen, setIsEditMemberOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
+  const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [isEditTeamOpen, setIsEditTeamOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   
   // Fetch users
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -170,6 +177,72 @@ export default function TeamPage() {
       });
     }
   });
+
+  // Team management mutations
+  const createTeamMutation = useMutation({
+    mutationFn: async (teamData: any) => {
+      const res = await apiRequest("POST", "/api/teams", teamData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      setIsCreateTeamOpen(false);
+      toast({
+        title: "Team created",
+        description: "New team has been created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating team",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/teams/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      setIsEditTeamOpen(false);
+      toast({
+        title: "Team updated",
+        description: "Team has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating team",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await apiRequest("DELETE", `/api/teams/${teamId}`);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      toast({
+        title: "Team deleted",
+        description: "Team has been deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting team",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
   
   // New team member form schema
   const addMemberSchema = z.object({
@@ -212,13 +285,68 @@ export default function TeamPage() {
       fullName: "",
       email: "",
       role: UserRole.WRITER,
+      teamId: null,
       status: "ACTIVE",
+    },
+  });
+
+  // Team form schemas
+  const teamSchema = z.object({
+    name: z.string().min(2, "Team name must be at least 2 characters"),
+    description: z.string().optional(),
+    teamLeadId: z.number().optional().nullable(),
+  });
+
+  const teamForm = useForm<z.infer<typeof teamSchema>>({
+    resolver: zodResolver(teamSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      teamLeadId: null,
+    },
+  });
+
+  const editTeamForm = useForm<z.infer<typeof teamSchema>>({
+    resolver: zodResolver(teamSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      teamLeadId: null,
     },
   });
   
   // Handle adding a new team member
   const onSubmit = (data: z.infer<typeof addMemberSchema>) => {
     addMemberMutation.mutate(data);
+  };
+
+  // Handle creating a new team
+  const onCreateTeam = (data: z.infer<typeof teamSchema>) => {
+    createTeamMutation.mutate(data);
+  };
+
+  // Handle editing a team
+  const onEditTeam = (data: z.infer<typeof teamSchema>) => {
+    if (selectedTeam) {
+      updateTeamMutation.mutate({ id: selectedTeam.id, data });
+    }
+  };
+
+  // Handle team actions
+  const handleEditTeam = (team: Team) => {
+    setSelectedTeam(team);
+    editTeamForm.reset({
+      name: team.name,
+      description: team.description || "",
+      teamLeadId: team.teamLeadId,
+    });
+    setIsEditTeamOpen(true);
+  };
+
+  const handleDeleteTeam = (teamId: number) => {
+    if (confirm("Are you sure you want to delete this team? Writers assigned to this team will need to be reassigned.")) {
+      deleteTeamMutation.mutate(teamId);
+    }
   };
 
   // Handle editing a team member
@@ -354,6 +482,12 @@ export default function TeamPage() {
                   <Mail className="h-4 w-4 mr-2" />
                   Management
                 </TabsTrigger>
+                {user?.role === UserRole.SUPERADMIN && (
+                  <TabsTrigger value="teams" className="flex items-center">
+                    <Building className="h-4 w-4 mr-2" />
+                    Teams
+                  </TabsTrigger>
+                )}
               </TabsList>
               
               {/* All Team Members */}
