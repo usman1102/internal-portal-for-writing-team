@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -484,6 +484,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const period = req.query.period as string || '7days';
       const analytics = await storage.getAnalytics(period);
       res.json(analytics);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Teams routes
+  app.get("/api/teams", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Only superadmin and team leads can view teams
+      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
+        return res.status(403).send("Unauthorized to view teams");
+      }
+      
+      const teams = await storage.getAllTeams();
+      res.json(teams);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/teams", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Only superadmin can create teams
+      if (req.user?.role !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can create teams");
+      }
+      
+      const validatedData = insertTeamSchema.parse(req.body);
+      const team = await storage.createTeam(validatedData);
+      res.status(201).json(team);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation failed", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/teams/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const teamId = parseInt(req.params.id);
+      const existingTeam = await storage.getTeam(teamId);
+      
+      if (!existingTeam) {
+        return res.status(404).send("Team not found");
+      }
+      
+      // Only superadmin or the team lead can update team
+      if (req.user?.role !== UserRole.SUPERADMIN && existingTeam.teamLeadId !== req.user?.id) {
+        return res.status(403).send("Unauthorized to update this team");
+      }
+      
+      const updatedTeam = await storage.updateTeam(teamId, req.body);
+      if (!updatedTeam) {
+        return res.status(404).send("Team not found");
+      }
+      
+      res.json(updatedTeam);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/teams/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Only superadmin can delete teams
+      if (req.user?.role !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can delete teams");
+      }
+      
+      const teamId = parseInt(req.params.id);
+      await storage.deleteTeam(teamId);
+      res.sendStatus(200);
     } catch (error) {
       next(error);
     }

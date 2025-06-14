@@ -45,7 +45,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { User, UserRole, Task } from "@shared/schema";
+import { User, UserRole, Task, Team, insertTeamSchema, insertUserSchema } from "@shared/schema";
 import { 
   cn, 
   getInitials, 
@@ -81,6 +81,11 @@ export default function TeamPage() {
   // Fetch tasks (for user details view)
   const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+  });
+  
+  // Fetch teams
+  const { data: teams = [], isLoading: isLoadingTeams } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
   });
   
   // Add new team member mutation
@@ -823,6 +828,37 @@ export default function TeamPage() {
                   </FormItem>
                 )}
               />
+              
+              {/* Team selection for writers */}
+              {form.watch("role") === UserRole.WRITER && (
+                <FormField
+                  control={form.control}
+                  name="teamId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                        defaultValue={field.value?.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a team" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.id.toString()}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               
               <DialogFooter>
                 <Button
