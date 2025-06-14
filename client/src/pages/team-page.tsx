@@ -526,7 +526,7 @@ export default function TeamPage() {
                           <div key={index} className="h-16 bg-gray-200 rounded"></div>
                         ))}
                       </div>
-                    ) : users.length > 0 ? (
+                    ) : filteredUsers.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -538,7 +538,7 @@ export default function TeamPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {users.map((member) => (
+                          {filteredUsers.map((member) => (
                             <TableRow key={member.id}>
                               <TableCell>
                                 <div className="flex items-center">
@@ -1079,9 +1079,7 @@ export default function TeamPage() {
                             <SelectItem value={UserRole.SUPERADMIN}>Super Admin</SelectItem>
                           </>
                         )}
-                        {user?.role === UserRole.TEAM_LEAD && (
-                          <SelectItem value={UserRole.TEAM_LEAD}>Team Lead</SelectItem>
-                        )}
+
                       </SelectContent>
                     </Select>
                     <FormMessage />
