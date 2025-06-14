@@ -83,15 +83,12 @@ export default function DashboardPage() {
   const filteredUsers = user?.role === UserRole.TEAM_LEAD 
     ? users.filter(u => {
         // For team leads, show only writers and proofreaders from teams they lead
-        // Find teams led by current user
-        const teamsLedByUser = users.filter(teamMember => 
-          teamMember.teamId && 
-          users.some(lead => lead.id === user.id && lead.role === UserRole.TEAM_LEAD)
-        );
+        const teamsLedByCurrentUser = teams.filter(team => team.teamLeadId === user.id);
+        const teamIds = teamsLedByCurrentUser.map(team => team.id);
         
         // Show writers and proofreaders from those teams
         return (u.role === UserRole.WRITER || u.role === UserRole.PROOFREADER) && 
-               u.teamId && teamsLedByUser.some(member => member.teamId === u.teamId);
+               u.teamId && teamIds.includes(u.teamId);
       })
     : users.filter(user => 
         user.role === UserRole.WRITER || 
@@ -199,7 +196,7 @@ export default function DashboardPage() {
             {/* Task Table */}
             <TaskTable 
               tasks={tasks.slice(0, 5)} // Show only 5 most recent tasks on dashboard
-              users={users}
+              users={filteredUsers}
               isLoading={isLoadingTasks}
               onTaskCreate={handleCreateTask}
               onTaskUpdate={handleUpdateTask}
@@ -209,7 +206,7 @@ export default function DashboardPage() {
             {/* Team Members and Analytics */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <TeamMembers 
-                members={users}
+                members={filteredUsers}
                 isLoading={isLoadingUsers}
                 onUpdateStatus={handleUpdateUserStatus}
               />

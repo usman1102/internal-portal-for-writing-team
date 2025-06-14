@@ -394,12 +394,27 @@ export default function TeamPage() {
     }
   };
   
+  // Filter users based on role - TEAM_LEAD sees only their team members
+  const filteredUsers = user?.role === UserRole.TEAM_LEAD 
+    ? users.filter(u => {
+        // For team leads, show only writers and proofreaders from teams they lead
+        const teamsLedByCurrentUser = teams.filter(team => team.teamLeadId === user.id);
+        const teamIds = teamsLedByCurrentUser.map(team => team.id);
+        
+        // Show writers and proofreaders from those teams
+        return (u.role === UserRole.WRITER || u.role === UserRole.PROOFREADER) && 
+               u.teamId && teamIds.includes(u.teamId);
+      })
+    : users;
+
   // Group users by role
-  const writerUsers = users.filter(user => user.role === UserRole.WRITER);
-  const proofreaderUsers = users.filter(user => user.role === UserRole.PROOFREADER);
-  const managementUsers = users.filter(user => 
-    user.role === UserRole.SALES || user.role === UserRole.TEAM_LEAD
-  );
+  const writerUsers = filteredUsers.filter(user => user.role === UserRole.WRITER);
+  const proofreaderUsers = filteredUsers.filter(user => user.role === UserRole.PROOFREADER);
+  const managementUsers = user?.role === UserRole.TEAM_LEAD 
+    ? [] // Team leads don't see management users
+    : users.filter(user => 
+        user.role === UserRole.SALES || user.role === UserRole.TEAM_LEAD || user.role === UserRole.SUPERADMIN
+      );
   
   // Check if current user can add team members
   const canAddMembers = user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD;
@@ -479,10 +494,13 @@ export default function TeamPage() {
                   <UserCheck className="h-4 w-4 mr-2" />
                   Proofreaders
                 </TabsTrigger>
-                <TabsTrigger value="management" className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Management
-                </TabsTrigger>
+                {/* Hide management tab for team leads */}
+                {user?.role !== UserRole.TEAM_LEAD && (
+                  <TabsTrigger value="management" className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Management
+                  </TabsTrigger>
+                )}
                 {user?.role === UserRole.SUPERADMIN && (
                   <TabsTrigger value="teams" className="flex items-center">
                     <Building className="h-4 w-4 mr-2" />
