@@ -167,52 +167,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks routes
   app.get("/api/tasks", async (req, res, next) => {
     try {
-      console.log("Tasks request - authenticated:", req.isAuthenticated(), "user:", req.user);
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const userRole = req.user?.role;
-      console.log("User role:", userRole);
       
       // Writers only see tasks assigned to them
       if (userRole === UserRole.WRITER) {
         const tasks = await storage.getTasksByAssignee(req.user.id);
-        const formattedTasks = tasks.map(task => ({
-          ...task,
-          assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
-          submissionDate: task.submissionDate || null,
-          createdAt: task.createdAt || null
-        }));
-        return res.json(formattedTasks);
+        return res.json(tasks);
       }
       
       // Sales users only see tasks they created
       if (userRole === UserRole.SALES) {
         const allTasks = await storage.getAllTasks();
         const salesTasks = allTasks.filter(task => task.assignedById === req.user.id);
-        const formattedTasks = salesTasks.map(task => ({
-          ...task,
-          assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
-          submissionDate: task.submissionDate || null,
-          createdAt: task.createdAt || null
-        }));
-        return res.json(formattedTasks);
+        return res.json(salesTasks);
       }
       
       // Superadmin, Team Leads, and Proofreaders see all tasks
       const tasks = await storage.getAllTasks();
-      
-      // Ensure proper data formatting for frontend
-      const formattedTasks = tasks.map(task => ({
-        ...task,
-        assignedToId: task.assignedToId || null,
-        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
-        submissionDate: task.submissionDate || null,
-        createdAt: task.createdAt || null
-      }));
-      
-      res.json(formattedTasks);
+      res.json(tasks);
     } catch (error) {
       next(error);
     }
@@ -234,7 +208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = insertTaskSchema.parse({
         ...req.body,
-        assignedById: req.user.id
+        assignedById: req.user.id,
+        projectId: null // Remove project reference
       });
       
       const task = await storage.createTask(validatedData);
@@ -242,12 +217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create activity entry for task creation
       await storage.createActivity({
         userId: req.user.id,
-        entityType: 'TASK',
-        entityId: task.id,
-        action: 'TASK_CREATED',
-        description: `${req.user.fullName} created a new task: ${task.title}`,
         taskId: task.id,
-        projectId: null
+        projectId: null,
+        action: 'TASK_CREATED',
+        description: `${req.user.fullName} created a new task: ${task.title}`
       });
       
       res.status(201).json(task);
@@ -346,12 +319,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.createActivity({
           userId: req.user.id,
-          entityType: 'TASK',
-          entityId: taskId,
-          action,
-          description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`,
           taskId: taskId,
-          projectId: null
+          projectId: null,
+          action,
+          description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
       }
       
@@ -448,12 +419,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create activity for the comment
       await storage.createActivity({
         userId: req.user.id,
-        entityType: 'TASK',
-        entityId: task.id,
-        action: 'COMMENT_ADDED',
-        description: `${req.user.fullName} commented on: ${task.title}`,
         taskId: task.id,
-        projectId: task.projectId
+        projectId: task.projectId,
+        action: 'COMMENT_ADDED',
+        description: `${req.user.fullName} commented on: ${task.title}`
       });
       
       res.status(201).json(comment);

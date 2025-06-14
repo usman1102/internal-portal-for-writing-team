@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, doublePrecision, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -61,20 +61,18 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
-  status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
-  priority: text("priority"),
-  wordCount: integer("word_count"),
-  deadline: timestamp("deadline", { mode: "date" }),
-  createdAt: timestamp("created_at").defaultNow(),
   assignedById: integer("assigned_by_id").references(() => users.id),
-  submissionDate: timestamp("submission_date", { mode: "date" }),
+  status: text("status").$type<TaskStatus>().default('NEW'),
+  deadline: timestamp("deadline"),
+  submissionDate: timestamp("submission_date"),
+  createdAt: timestamp("created_at").defaultNow(),
   budget: doublePrecision("budget"),
 });
 
 // Files schema
 export const files = pgTable("files", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  taskId: integer("task_id").references(() => tasks.id),
   uploadedById: integer("uploaded_by_id").references(() => users.id),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
@@ -87,7 +85,7 @@ export const files = pgTable("files", {
 // Comments schema
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  taskId: integer("task_id").references(() => tasks.id),
   userId: integer("user_id").references(() => users.id),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -96,15 +94,12 @@ export const comments = pgTable("comments", {
 // Activities schema
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
-  action: text("action").notNull(),
-  entityType: text("entity_type").notNull(),
-  entityId: integer("entity_id").notNull(),
   userId: integer("user_id").references(() => users.id),
-  details: text("details"),
-  createdAt: timestamp("created_at").defaultNow(),
   taskId: integer("task_id").references(() => tasks.id),
   projectId: integer("project_id").references(() => projects.id),
+  action: text("action").notNull(),
   description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Analytics schema
@@ -132,22 +127,15 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, creat
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
-export const insertFileSchema = createInsertSchema(files).omit({ id: true, uploadedAt: true }).extend({
-  taskId: z.number()
-});
+export const insertFileSchema = createInsertSchema(files).omit({ id: true, uploadedAt: true });
 export type InsertFile = z.infer<typeof insertFileSchema>;
 export type File = typeof files.$inferSelect;
 
-export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true }).extend({
-  taskId: z.number()
-});
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 
-export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true }).extend({
-  entityType: z.string(),
-  entityId: z.number()
-});
+export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 

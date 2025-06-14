@@ -53,21 +53,18 @@ export function CreateTaskDialog({
   // Only writer users can be assigned to tasks
   const availableWriters = users.filter(user => user.role === UserRole.WRITER && user.status !== 'ON_LEAVE');
 
-  const formSchema = z.object({
+  const formSchema = insertTaskSchema.extend({
     title: z.string().min(5, "Title must be at least 5 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
     deadline: z.string().refine(date => !isNaN(Date.parse(date)), {
       message: "Please select a valid date",
     }),
-    status: z.string().default("NEW"),
     projectId: z.number().optional(),
     assignedToId: z.number().optional(),
     budget: z.number().min(0, "Budget cannot be negative").optional(),
   });
 
-  type FormData = z.infer<typeof formSchema>;
-
-  const form = useForm<FormData>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -75,8 +72,6 @@ export function CreateTaskDialog({
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
       status: "NEW",
       budget: 0,
-      projectId: undefined,
-      assignedToId: undefined,
     },
   });
 
@@ -90,12 +85,9 @@ export function CreateTaskDialog({
     });
   };
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true);
-      
-      console.log("Form data before processing:", data);
-      console.log("Form validation errors:", form.formState.errors);
       
       // Format the data before submitting
       const taskData = {
@@ -105,20 +97,9 @@ export function CreateTaskDialog({
         assignedToId: data.assignedToId || null,
       };
       
-      console.log("Formatted task data:", taskData);
-      
       // Call the onCreateTask callback if provided
       if (onCreateTask) {
-        console.log("Calling onCreateTask with data:", taskData);
         await onCreateTask(taskData);
-      } else {
-        console.error("onCreateTask callback is not provided");
-        toast({
-          title: "Error",
-          description: "Task creation handler is not available",
-          variant: "destructive",
-        });
-        return;
       }
       
       toast({
@@ -130,7 +111,6 @@ export function CreateTaskDialog({
       onClose();
       form.reset();
     } catch (error) {
-      console.error("Error creating task:", error);
       toast({
         title: "Error creating task",
         description: (error as Error).message,
@@ -152,9 +132,7 @@ export function CreateTaskDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
-            console.log("Form validation failed:", errors);
-          })} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -276,11 +254,7 @@ export function CreateTaskDialog({
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                onClick={() => console.log("Create Task button clicked")}
-              >
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creating..." : "Create Task"}
               </Button>
             </DialogFooter>

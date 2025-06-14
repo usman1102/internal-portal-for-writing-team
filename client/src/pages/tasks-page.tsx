@@ -15,25 +15,11 @@ export default function TasksPage() {
   const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
-
-  // Debug logging for task data
-  if (tasks.length > 0) {
-    console.log("Tasks received:", tasks);
-    console.log("Current user ID:", user?.id, "type:", typeof user?.id);
-    tasks.forEach(task => {
-      console.log(`Task ${task.id}: assignedToId=${task.assignedToId} (type: ${typeof task.assignedToId}), deadline=${task.deadline} (type: ${typeof task.deadline})`);
-      console.log(`  - Is assigned to me? ${task.assignedToId === user?.id}`);
-      console.log(`  - Is unassigned? ${task.assignedToId === null || task.assignedToId === undefined}`);
-    });
-  }
   
   // Fetch users
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
-
-  // Filter users for display - writers see all users for task assignment info
-  const displayUsers = user?.role === UserRole.WRITER ? users : users;
   
   // Create task mutation
   const createTaskMutation = useMutation({
@@ -86,46 +72,14 @@ export default function TasksPage() {
         
         <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
           <div className="space-y-6">
-            {/* Writer-specific task view */}
-            {user?.role === UserRole.WRITER ? (
-              <div className="space-y-8">
-                {/* Unassigned Tasks */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Tasks (Unassigned)</h2>
-                  <TaskTable 
-                    tasks={tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined)}
-                    users={displayUsers}
-                    isLoading={isLoadingTasks || isLoadingUsers}
-                    onTaskCreate={handleCreateTask}
-                    onTaskUpdate={handleUpdateTask}
-                    canCreateTasks={canCreateTasks}
-                  />
-                </div>
-                
-                {/* My Assigned Tasks */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">My Assigned Tasks</h2>
-                  <TaskTable 
-                    tasks={tasks.filter(task => task.assignedToId === user?.id && task.assignedToId !== null && task.assignedToId !== undefined)}
-                    users={displayUsers}
-                    isLoading={isLoadingTasks || isLoadingUsers}
-                    onTaskCreate={handleCreateTask}
-                    onTaskUpdate={handleUpdateTask}
-                    canCreateTasks={canCreateTasks}
-                  />
-                </div>
-              </div>
-            ) : (
-              /* Regular task view for other roles */
-              <TaskTable 
-                tasks={tasks}
-                users={displayUsers}
-                isLoading={isLoadingTasks || isLoadingUsers}
-                onTaskCreate={handleCreateTask}
-                onTaskUpdate={handleUpdateTask}
-                canCreateTasks={canCreateTasks}
-              />
-            )}
+            <TaskTable 
+              tasks={tasks}
+              users={users}
+              isLoading={isLoadingTasks || isLoadingUsers}
+              onTaskCreate={handleCreateTask}
+              onTaskUpdate={handleUpdateTask}
+              canCreateTasks={canCreateTasks}
+            />
           </div>
         </main>
       </div>
