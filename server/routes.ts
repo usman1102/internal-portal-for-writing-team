@@ -103,7 +103,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized to update users");
       }
       
-      const updatedUser = await storage.updateUser(userId, req.body);
+      let updateData = { ...req.body };
+      
+      // If password is provided, hash it
+      if (updateData.password && updateData.password.trim() !== "") {
+        updateData.password = await storage.hashPassword(updateData.password);
+      } else {
+        // Remove password from update if not provided
+        delete updateData.password;
+      }
+      
+      // Check if username is being changed and if it already exists
+      if (updateData.username) {
+        const existingUser = await storage.getUserByUsername(updateData.username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).send("Username already exists");
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
       
       if (!updatedUser) {
         return res.status(404).send("User not found");

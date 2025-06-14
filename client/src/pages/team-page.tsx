@@ -188,6 +188,8 @@ export default function TeamPage() {
 
   // Edit team member form schema
   const editMemberSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
     fullName: z.string().min(2, "Full name is required"),
     email: z.string().email("Invalid email address"),
     role: z.enum([UserRole.SUPERADMIN, UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
@@ -197,6 +199,8 @@ export default function TeamPage() {
   const editForm = useForm<z.infer<typeof editMemberSchema>>({
     resolver: zodResolver(editMemberSchema),
     defaultValues: {
+      username: "",
+      password: "",
       fullName: "",
       email: "",
       role: UserRole.WRITER,
@@ -212,7 +216,12 @@ export default function TeamPage() {
   // Handle editing a team member
   const onEditSubmit = (data: z.infer<typeof editMemberSchema>) => {
     if (selectedUser) {
-      updateUserMutation.mutate({ id: selectedUser.id, data });
+      // Only include password in update if it's provided
+      const updateData = { ...data };
+      if (!data.password || data.password.trim() === "") {
+        delete updateData.password;
+      }
+      updateUserMutation.mutate({ id: selectedUser.id, data: updateData });
     }
   };
   
@@ -231,6 +240,8 @@ export default function TeamPage() {
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     editForm.reset({
+      username: user.username,
+      password: "",
       fullName: user.fullName,
       email: user.email,
       role: user.role,
@@ -961,6 +972,38 @@ export default function TeamPage() {
           
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Leave blank to keep current password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={editForm.control}
                 name="fullName"
