@@ -53,18 +53,21 @@ export function CreateTaskDialog({
   // Only writer users can be assigned to tasks
   const availableWriters = users.filter(user => user.role === UserRole.WRITER && user.status !== 'ON_LEAVE');
 
-  const formSchema = insertTaskSchema.extend({
+  const formSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
     deadline: z.string().refine(date => !isNaN(Date.parse(date)), {
       message: "Please select a valid date",
     }),
+    status: z.string().default("NEW"),
     projectId: z.number().optional(),
     assignedToId: z.number().optional(),
     budget: z.number().min(0, "Budget cannot be negative").optional(),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  type FormData = z.infer<typeof formSchema>;
+
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -72,6 +75,8 @@ export function CreateTaskDialog({
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
       status: "NEW",
       budget: 0,
+      projectId: undefined,
+      assignedToId: undefined,
     },
   });
 
@@ -85,7 +90,7 @@ export function CreateTaskDialog({
     });
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       
