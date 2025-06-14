@@ -167,9 +167,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tasks routes
   app.get("/api/tasks", async (req, res, next) => {
     try {
+      console.log("Tasks request - authenticated:", req.isAuthenticated(), "user:", req.user);
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const userRole = req.user?.role;
+      console.log("User role:", userRole);
       
       // Writers only see tasks assigned to them
       if (userRole === UserRole.WRITER) {
@@ -177,9 +179,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const formattedTasks = tasks.map(task => ({
           ...task,
           assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
-          submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
-          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+          deadline: task.deadline || null,
+          submissionDate: task.submissionDate || null,
+          createdAt: task.createdAt || null
         }));
         return res.json(formattedTasks);
       }
@@ -191,9 +193,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const formattedTasks = salesTasks.map(task => ({
           ...task,
           assignedToId: task.assignedToId || null,
-          deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
-          submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
-          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+          deadline: task.deadline || null,
+          submissionDate: task.submissionDate || null,
+          createdAt: task.createdAt || null
         }));
         return res.json(formattedTasks);
       }
@@ -205,9 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formattedTasks = tasks.map(task => ({
         ...task,
         assignedToId: task.assignedToId || null,
-        deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
-        submissionDate: task.submissionDate ? new Date(task.submissionDate).toISOString() : null,
-        createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+        deadline: task.deadline || null,
+        submissionDate: task.submissionDate || null,
+        createdAt: task.createdAt || null
       }));
       
       res.json(formattedTasks);
