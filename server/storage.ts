@@ -1,6 +1,5 @@
 import { 
   users, 
-  projects, 
   tasks, 
   files, 
   comments, 
@@ -9,8 +8,6 @@ import {
   teams,
   type User, 
   type InsertUser,
-  type Project,
-  type InsertProject,
   type Task,
   type InsertTask,
   type File,
@@ -45,11 +42,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   hashPassword(password: string): Promise<string>;
 
-  // Project methods
-  getProject(id: number): Promise<Project | undefined>;
-  getAllProjects(): Promise<Project[]>;
-  createProject(project: InsertProject): Promise<Project>;
-  updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined>;
+
 
   // Task methods
   getTask(id: number): Promise<Task | undefined>;
@@ -93,7 +86,6 @@ export interface IStorage {
 // In-memory storage implementation
 export class MemStorage implements IStorage {
   private usersData: Map<number, User>;
-  private projectsData: Map<number, Project>;
   private tasksData: Map<number, Task>;
   private filesData: Map<number, File>;
   private commentsData: Map<number, Comment>;
@@ -103,7 +95,6 @@ export class MemStorage implements IStorage {
   sessionStore: session.Store;
   
   private userIdCounter: number;
-  private projectIdCounter: number;
   private taskIdCounter: number;
   private fileIdCounter: number;
   private commentIdCounter: number;
@@ -113,7 +104,6 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.usersData = new Map();
-    this.projectsData = new Map();
     this.tasksData = new Map();
     this.filesData = new Map();
     this.commentsData = new Map();

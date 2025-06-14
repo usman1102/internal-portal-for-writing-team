@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, insertProjectSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -164,61 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tasks routes
 
-  // Projects routes
-  app.get("/api/projects", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const projects = await storage.getAllProjects();
-      res.json(projects);
-    } catch (error) {
-      next(error);
-    }
-  });
 
-  app.post("/api/projects", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      // Only superadmin and sales can create projects
-      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.SALES) {
-        return res.status(403).send("Unauthorized to create projects");
-      }
-      
-      const validatedData = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject(validatedData);
-      
-      res.status(201).json(project);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation failed", errors: error.errors });
-      }
-      next(error);
-    }
-  });
-
-  app.patch("/api/projects/:id", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const projectId = parseInt(req.params.id);
-      
-      // Only superadmin and sales can update projects
-      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.SALES) {
-        return res.status(403).send("Unauthorized to update projects");
-      }
-      
-      const updatedProject = await storage.updateProject(projectId, req.body);
-      
-      if (!updatedProject) {
-        return res.status(404).send("Project not found");
-      }
-      
-      res.json(updatedProject);
-    } catch (error) {
-      next(error);
-    }
-  });
 
   // Tasks routes
   app.get("/api/tasks", async (req, res, next) => {

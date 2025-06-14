@@ -42,24 +42,11 @@ export const teams = pgTable("teams", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Projects schema
-export const projects = pgTable("projects", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  clientName: text("client_name"),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date"),
-  budget: doublePrecision("budget"),
-  status: text("status").default('ACTIVE'),
-});
-
 // Tasks schema
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   assignedById: integer("assigned_by_id").references(() => users.id),
   status: text("status").$type<TaskStatus>().default('NEW'),
@@ -96,7 +83,6 @@ export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
   taskId: integer("task_id").references(() => tasks.id),
-  projectId: integer("project_id").references(() => projects.id),
   action: text("action").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -117,9 +103,7 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export const insertProjectSchema = createInsertSchema(projects).omit({ id: true });
-export type InsertProject = z.infer<typeof insertProjectSchema>;
-export type Project = typeof projects.$inferSelect;
+
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true }).extend({
   deadline: z.string().optional().transform((val) => val ? new Date(val) : undefined)
