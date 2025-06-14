@@ -123,6 +123,9 @@ export function TaskTable({
           <TableHeader className="bg-gray-50 border-b border-gray-200">
             <TableRow>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Task
               </TableHead>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -143,6 +146,9 @@ export function TaskTable({
             {isLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={index} className="animate-pulse">
+                  <TableCell>
+                    <div className="h-4 bg-gray-200 rounded w-8"></div>
+                  </TableCell>
                   <TableCell>
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -177,6 +183,11 @@ export function TaskTable({
                     key={task.id} 
                     className="hover:bg-gray-50 transition-all duration-150 ease-in-out task-card"
                   >
+                    <TableCell>
+                      <div className="text-sm font-medium text-gray-900">
+                        #{task.id}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -251,7 +262,7 @@ export function TaskTable({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   No tasks found
                 </TableCell>
               </TableRow>
