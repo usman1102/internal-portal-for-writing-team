@@ -44,7 +44,7 @@ export default function TasksPage() {
   });
   
   // Determine if the current user can create tasks
-  const canCreateTasks = user?.role === UserRole.SALES || user?.role === UserRole.TEAM_LEAD;
+  const canCreateTasks = user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SALES || user?.role === UserRole.TEAM_LEAD;
   
   // Handle creating a task
   const handleCreateTask = async (taskData: any) => {

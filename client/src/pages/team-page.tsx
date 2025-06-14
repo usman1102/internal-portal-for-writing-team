@@ -85,7 +85,7 @@ export default function TeamPage() {
   // Add new team member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (userData: any) => {
-      const res = await apiRequest("POST", "/api/register", userData);
+      const res = await apiRequest("POST", "/api/users", userData);
       return res.json();
     },
     onSuccess: () => {
@@ -126,7 +126,7 @@ export default function TeamPage() {
     password: z.string().min(6, "Password must be at least 6 characters"),
     fullName: z.string().min(2, "Full name is required"),
     email: z.string().email("Invalid email address"),
-    role: z.enum([UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
+    role: z.enum([UserRole.SUPERADMIN, UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
   });
   
   const form = useForm<z.infer<typeof addMemberSchema>>({
@@ -164,7 +164,7 @@ export default function TeamPage() {
   );
   
   // Check if current user can add team members
-  const canAddMembers = user?.role === UserRole.SALES || user?.role === UserRole.TEAM_LEAD;
+  const canAddMembers = user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD;
   
   // Get user tasks
   const getUserTasks = (userId: number) => {
@@ -685,8 +685,16 @@ export default function TeamPage() {
                       <SelectContent>
                         <SelectItem value={UserRole.WRITER}>Writer</SelectItem>
                         <SelectItem value={UserRole.PROOFREADER}>Proofreader</SelectItem>
-                        <SelectItem value={UserRole.TEAM_LEAD}>Team Lead</SelectItem>
-                        <SelectItem value={UserRole.SALES}>Sales</SelectItem>
+                        {user?.role === UserRole.SUPERADMIN && (
+                          <>
+                            <SelectItem value={UserRole.TEAM_LEAD}>Team Lead</SelectItem>
+                            <SelectItem value={UserRole.SALES}>Sales</SelectItem>
+                            <SelectItem value={UserRole.SUPERADMIN}>Super Admin</SelectItem>
+                          </>
+                        )}
+                        {user?.role === UserRole.TEAM_LEAD && (
+                          <SelectItem value={UserRole.TEAM_LEAD}>Team Lead</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
