@@ -1517,6 +1517,38 @@ export default function TeamPage() {
                 )}
               />
 
+              {/* Team Selection Field - only for Writers and Proofreaders */}
+              {(editForm.watch("role") === UserRole.WRITER || editForm.watch("role") === UserRole.PROOFREADER) && (
+                <FormField
+                  control={editForm.control}
+                  name="teamId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team Assignment</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
+                        value={field.value ? field.value.toString() : "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select team" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Others (No Team)</SelectItem>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.id.toString()}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <FormField
                 control={editForm.control}
                 name="status"
