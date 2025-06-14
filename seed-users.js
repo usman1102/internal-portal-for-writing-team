@@ -1,7 +1,9 @@
-const { scrypt, randomBytes } = require('crypto');
-const { promisify } = require('util');
-const { Pool } = require('@neondatabase/serverless');
+import { scrypt, randomBytes } from 'crypto';
+import { promisify } from 'util';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
 
+neonConfig.webSocketConstructor = ws;
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password) {

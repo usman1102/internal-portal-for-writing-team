@@ -448,7 +448,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(insertUser as any)
       .returning();
     return user;
   }
@@ -483,7 +483,7 @@ export class DatabaseStorage implements IStorage {
   async createProject(projectData: InsertProject): Promise<Project> {
     const [project] = await db
       .insert(projects)
-      .values(projectData)
+      .values([projectData])
       .returning();
     return project;
   }
@@ -518,7 +518,7 @@ export class DatabaseStorage implements IStorage {
   async createTask(taskData: InsertTask): Promise<Task> {
     const [task] = await db
       .insert(tasks)
-      .values(taskData)
+      .values(taskData as any)
       .returning();
     return task;
   }
