@@ -20,6 +20,9 @@ export default function TasksPage() {
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
+
+  // Filter users for display - writers see all users for task assignment info
+  const displayUsers = user?.role === UserRole.WRITER ? users : users;
   
   // Create task mutation
   const createTaskMutation = useMutation({
@@ -80,7 +83,7 @@ export default function TasksPage() {
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Tasks (Unassigned)</h2>
                   <TaskTable 
                     tasks={tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined)}
-                    users={users}
+                    users={displayUsers}
                     isLoading={isLoadingTasks || isLoadingUsers}
                     onTaskCreate={handleCreateTask}
                     onTaskUpdate={handleUpdateTask}
@@ -93,7 +96,7 @@ export default function TasksPage() {
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">My Assigned Tasks</h2>
                   <TaskTable 
                     tasks={tasks.filter(task => task.assignedToId === user?.id && task.assignedToId !== null && task.assignedToId !== undefined)}
-                    users={users}
+                    users={displayUsers}
                     isLoading={isLoadingTasks || isLoadingUsers}
                     onTaskCreate={handleCreateTask}
                     onTaskUpdate={handleUpdateTask}
@@ -105,7 +108,7 @@ export default function TasksPage() {
               /* Regular task view for other roles */
               <TaskTable 
                 tasks={tasks}
-                users={users}
+                users={displayUsers}
                 isLoading={isLoadingTasks || isLoadingUsers}
                 onTaskCreate={handleCreateTask}
                 onTaskUpdate={handleUpdateTask}

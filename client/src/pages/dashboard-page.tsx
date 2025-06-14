@@ -90,6 +90,8 @@ export default function DashboardPage() {
         return (u.role === UserRole.WRITER || u.role === UserRole.PROOFREADER) && 
                u.teamId && teamIds.includes(u.teamId);
       })
+    : user?.role === UserRole.WRITER
+    ? users // Writers need to see all users for task assignment display
     : users.filter(user => 
         user.role === UserRole.WRITER || 
         user.role === UserRole.PROOFREADER ||
