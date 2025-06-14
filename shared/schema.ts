@@ -61,11 +61,13 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
-  assignedById: integer("assigned_by_id").references(() => users.id).notNull(),
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
-  deadline: timestamp("deadline"),
-  submissionDate: timestamp("submission_date"),
+  priority: text("priority"),
+  wordCount: integer("word_count"),
+  deadline: timestamp("deadline", { mode: "date" }),
   createdAt: timestamp("created_at").defaultNow(),
+  assignedById: integer("assigned_by_id").references(() => users.id),
+  submissionDate: timestamp("submission_date", { mode: "date" }),
   budget: doublePrecision("budget"),
 });
 
