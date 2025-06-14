@@ -178,6 +178,7 @@ export default function TeamPage() {
     fullName: z.string().min(2, "Full name is required"),
     email: z.string().email("Invalid email address"),
     role: z.enum([UserRole.SUPERADMIN, UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
+    teamId: z.number().optional().nullable(),
   });
   
   const form = useForm<z.infer<typeof addMemberSchema>>({
@@ -188,6 +189,7 @@ export default function TeamPage() {
       fullName: "",
       email: "",
       role: UserRole.WRITER,
+      teamId: null,
     },
   });
 
@@ -198,6 +200,7 @@ export default function TeamPage() {
     fullName: z.string().min(2, "Full name is required"),
     email: z.string().email("Invalid email address"),
     role: z.enum([UserRole.SUPERADMIN, UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
+    teamId: z.number().optional().nullable(),
     status: z.string(),
   });
 
