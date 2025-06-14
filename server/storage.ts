@@ -25,8 +25,11 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
 const MemoryStore = createMemoryStore(session);
+const scryptAsync = promisify(scrypt);
 
 // Define the Storage interface
 export interface IStorage {
@@ -113,6 +116,30 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24 hours
     });
+
+    // Create default superadmin user
+    this.createDefaultUsers();
+  }
+
+  private async createDefaultUsers() {
+    // Create superadmin user with password 'admin123'
+    const hashedPassword = await this.hashPassword('admin123');
+    const superadmin: User = {
+      id: this.userIdCounter++,
+      username: 'superadmin',
+      password: hashedPassword,
+      fullName: 'Super Administrator',
+      email: 'superadmin@writepro.com',
+      role: UserRole.SUPERADMIN,
+      status: 'ACTIVE'
+    };
+    this.usersData.set(superadmin.id, superadmin);
+  }
+
+  private async hashPassword(password: string) {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
   }
 
   // User methods

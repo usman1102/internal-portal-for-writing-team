@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertProjectSchema, insertFileSchema, insertCommentSchema, insertActivitySchema } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -14,9 +14,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
+      // Only superadmin and team leads can view all users
+      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
+        return res.status(403).send("Unauthorized to view users");
+      }
+      
       const users = await storage.getAllUsers();
       res.json(users);
     } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.post("/api/users", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Check permissions for creating users
+      const { role: newUserRole } = req.body;
+      const currentUserRole = req.user?.role;
+      
+      // Only superadmin and team leads can create users
+      if (currentUserRole !== UserRole.SUPERADMIN && currentUserRole !== UserRole.TEAM_LEAD) {
+        return res.status(403).send("Unauthorized to create users");
+      }
+      
+      // Team leads can only create writers and proofreaders
+      if (currentUserRole === UserRole.TEAM_LEAD && 
+          newUserRole !== UserRole.WRITER && 
+          newUserRole !== UserRole.PROOFREADER) {
+        return res.status(403).send("Team leads can only create writers or proofreaders");
+      }
+      
+      // Only superadmin can create sales users
+      if (newUserRole === UserRole.SALES && currentUserRole !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can create sales users");
+      }
+      
+      // Only superadmin can create other superadmins
+      if (newUserRole === UserRole.SUPERADMIN && currentUserRole !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can create other superadmins");
+      }
+      
+      // Validate request body
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation failed", errors: error.errors });
+      }
       next(error);
     }
   });
@@ -43,9 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const userId = parseInt(req.params.id);
-      // Only team leads and sales can update user status
-      if (req.user?.role !== 'TEAM_LEAD' && req.user?.role !== 'SALES') {
-        return res.status(403).send("Unauthorized to update user status");
+      // Only superadmin and team leads can update users
+      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
+        return res.status(403).send("Unauthorized to update users");
       }
       
       const updatedUser = await storage.updateUser(userId, req.body);
@@ -60,69 +108,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Projects routes
-  app.get("/api/projects", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const projects = await storage.getAllProjects();
-      res.json(projects);
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  app.post("/api/projects", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      // Only team leads and sales can create projects
-      if (req.user?.role !== 'TEAM_LEAD' && req.user?.role !== 'SALES') {
-        return res.status(403).send("Unauthorized to create projects");
-      }
-      
-      // Validate request body
-      const validatedData = insertProjectSchema.parse(req.body);
-      
-      const project = await storage.createProject(validatedData);
-      res.status(201).json(project);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation failed", errors: error.errors });
-      }
-      next(error);
-    }
-  });
-  
-  app.get("/api/projects/:id", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const projectId = parseInt(req.params.id);
-      const project = await storage.getProject(projectId);
-      
-      if (!project) {
-        return res.status(404).send("Project not found");
-      }
-      
-      res.json(project);
-    } catch (error) {
-      next(error);
-    }
-  });
+  // Tasks routes
 
   // Tasks routes
   app.get("/api/tasks", async (req, res, next) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      // If the user is a writer, only show tasks assigned to them
-      if (req.user?.role === 'WRITER') {
+      const userRole = req.user?.role;
+      
+      // Writers only see tasks assigned to them
+      if (userRole === UserRole.WRITER) {
         const tasks = await storage.getTasksByAssignee(req.user.id);
         return res.json(tasks);
       }
       
-      // For all other roles, show all tasks
+      // Sales users only see tasks they created
+      if (userRole === UserRole.SALES) {
+        const allTasks = await storage.getAllTasks();
+        const salesTasks = allTasks.filter(task => task.assignedById === req.user.id);
+        return res.json(salesTasks);
+      }
+      
+      // Superadmin, Team Leads, and Proofreaders see all tasks
       const tasks = await storage.getAllTasks();
       res.json(tasks);
     } catch (error) {
@@ -134,15 +142,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      // Only team leads and sales can create tasks
-      if (req.user?.role !== 'TEAM_LEAD' && req.user?.role !== 'SALES') {
+      const userRole = req.user?.role;
+      
+      // Only superadmin, team leads, and sales can create tasks
+      if (userRole !== UserRole.SUPERADMIN && 
+          userRole !== UserRole.TEAM_LEAD && 
+          userRole !== UserRole.SALES) {
         return res.status(403).send("Unauthorized to create tasks");
       }
       
       // Validate request body
       const validatedData = insertTaskSchema.parse({
         ...req.body,
-        assignedById: req.user.id
+        assignedById: req.user.id,
+        projectId: null // Remove project reference
       });
       
       const task = await storage.createTask(validatedData);
@@ -151,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         userId: req.user.id,
         taskId: task.id,
-        projectId: task.projectId,
+        projectId: null,
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
@@ -198,28 +211,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Task not found");
       }
       
-      // Check permissions
-      const isWriter = req.user?.role === 'WRITER';
-      const isProofreader = req.user?.role === 'PROOFREADER';
+      const userRole = req.user?.role;
+      
+      // Check permissions based on role
+      const isWriter = userRole === UserRole.WRITER;
+      const isProofreader = userRole === UserRole.PROOFREADER;
+      const isSales = userRole === UserRole.SALES;
+      const isTeamLead = userRole === UserRole.TEAM_LEAD;
+      const isSuperadmin = userRole === UserRole.SUPERADMIN;
+      
       const isAssignedWriter = isWriter && task.assignedToId === req.user?.id;
-      const canEditTask = !isWriter || isAssignedWriter;
+      const isTaskCreator = isSales && task.assignedById === req.user?.id;
       
-      if (!canEditTask) {
-        return res.status(403).send("Unauthorized to update this task");
+      // Permission check
+      if (isWriter && !isAssignedWriter) {
+        return res.status(403).send("Writers can only update their assigned tasks");
       }
       
-      // Writers can only update status, not other fields
+      if (isSales && !isTaskCreator) {
+        return res.status(403).send("Sales users can only update tasks they created");
+      }
+      
+      // Determine what can be updated
       let updateData = req.body;
-      if (isWriter) {
-        updateData = { status: req.body.status };
-      }
       
-      // Proofreaders can only update status to COMPLETED or REVISION
-      if (isProofreader) {
-        if (req.body.status !== 'COMPLETED' && req.body.status !== 'REVISION') {
+      if (isWriter) {
+        // Writers can only update status
+        updateData = { status: req.body.status };
+      } else if (isProofreader) {
+        // Proofreaders can only update status to COMPLETED or REVISION
+        if (req.body.status && req.body.status !== 'COMPLETED' && req.body.status !== 'REVISION') {
           return res.status(403).send("Proofreaders can only mark tasks as COMPLETED or REVISION");
         }
         updateData = { status: req.body.status };
+      } else if (isSales && isTaskCreator) {
+        // Sales can update their own tasks fully
+        updateData = req.body;
+      } else if (isTeamLead || isSuperadmin) {
+        // Team leads and superadmin can update any task
+        updateData = req.body;
+      } else {
+        return res.status(403).send("Unauthorized to update this task");
       }
       
       const updatedTask = await storage.updateTask(taskId, updateData);
@@ -234,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createActivity({
           userId: req.user.id,
           taskId: taskId,
-          projectId: task.projectId,
+          projectId: null,
           action,
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });

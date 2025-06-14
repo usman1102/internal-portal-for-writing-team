@@ -109,13 +109,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             Tasks
           </SidebarLink>
           
-          <SidebarLink 
-            href="/projects" 
-            icon={<Folder size={18} />} 
-            active={location === '/projects'}
-          >
-            Projects
-          </SidebarLink>
+
           
           <SidebarLink 
             href="/analytics" 
