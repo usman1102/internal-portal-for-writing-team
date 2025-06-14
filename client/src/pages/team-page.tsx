@@ -185,10 +185,35 @@ export default function TeamPage() {
       role: UserRole.WRITER,
     },
   });
+
+  // Edit team member form schema
+  const editMemberSchema = z.object({
+    fullName: z.string().min(2, "Full name is required"),
+    email: z.string().email("Invalid email address"),
+    role: z.enum([UserRole.SUPERADMIN, UserRole.SALES, UserRole.TEAM_LEAD, UserRole.WRITER, UserRole.PROOFREADER]),
+    status: z.string(),
+  });
+
+  const editForm = useForm<z.infer<typeof editMemberSchema>>({
+    resolver: zodResolver(editMemberSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      role: UserRole.WRITER,
+      status: "ACTIVE",
+    },
+  });
   
   // Handle adding a new team member
   const onSubmit = (data: z.infer<typeof addMemberSchema>) => {
     addMemberMutation.mutate(data);
+  };
+
+  // Handle editing a team member
+  const onEditSubmit = (data: z.infer<typeof editMemberSchema>) => {
+    if (selectedUser) {
+      updateUserMutation.mutate({ id: selectedUser.id, data });
+    }
   };
   
   // Handle viewing user details
@@ -373,13 +398,34 @@ export default function TeamPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleViewUser(member)}
-                                >
-                                  View Details
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleViewUser(member)}
+                                  >
+                                    View Details
+                                  </Button>
+                                  {user?.role === UserRole.SUPERADMIN && member.id !== user.id && (
+                                    <>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => handleEditUser(member)}
+                                      >
+                                        Edit
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => handleDeleteUser(member.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                      >
+                                        Delete
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -902,6 +948,124 @@ export default function TeamPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Team Member Dialog */}
+      <Dialog open={isEditMemberOpen} onOpenChange={setIsEditMemberOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              Update team member information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={UserRole.WRITER}>Writer</SelectItem>
+                        <SelectItem value={UserRole.PROOFREADER}>Proofreader</SelectItem>
+                        {user?.role === UserRole.SUPERADMIN && (
+                          <>
+                            <SelectItem value={UserRole.TEAM_LEAD}>Team Lead</SelectItem>
+                            <SelectItem value={UserRole.SALES}>Sales</SelectItem>
+                            <SelectItem value={UserRole.SUPERADMIN}>Super Admin</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
+                        <SelectItem value="ON_LEAVE">On Leave</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditMemberOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={updateUserMutation.isPending}
+                >
+                  {updateUserMutation.isPending ? "Updating..." : "Update Member"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
