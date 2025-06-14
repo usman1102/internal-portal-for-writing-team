@@ -92,7 +92,6 @@ export function CreateTaskDialog({
       const taskData = {
         ...data,
         deadline: new Date(data.deadline),
-        projectId: data.projectId || null,
         assignedToId: data.assignedToId || null,
       };
       

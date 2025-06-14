@@ -49,7 +49,7 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   assignedById: integer("assigned_by_id").references(() => users.id),
-  status: text("status").$type<TaskStatus>().default('NEW'),
+  status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   deadline: timestamp("deadline"),
   submissionDate: timestamp("submission_date"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -92,7 +92,7 @@ export const activities = pgTable("activities", {
 export const analytics = pgTable("analytics", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  projectId: integer("project_id").references(() => projects.id),
+
   data: jsonb("data"),
   period: text("period").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

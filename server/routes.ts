@@ -372,6 +372,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const taskId = parseInt(req.params.taskId);
       
+      if (isNaN(taskId)) {
+        return res.status(400).send("Invalid task ID");
+      }
+      
       // Check if the task exists and the user has access to it
       const task = await storage.getTask(taskId);
       
@@ -420,7 +424,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         userId: req.user.id,
         taskId: task.id,
-        projectId: task.projectId,
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
@@ -439,6 +442,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const taskId = parseInt(req.params.taskId);
+      
+      if (isNaN(taskId)) {
+        return res.status(400).send("Invalid task ID");
+      }
       
       // Check if the task exists and the user has access to it
       const task = await storage.getTask(taskId);
