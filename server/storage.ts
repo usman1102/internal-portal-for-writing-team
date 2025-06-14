@@ -99,6 +99,7 @@ export class MemStorage implements IStorage {
   private commentsData: Map<number, Comment>;
   private activitiesData: Map<number, Activity>;
   private analyticsData: Map<number, Analytics>;
+  private teamsData: Map<number, Team>;
   sessionStore: session.Store;
   
   private userIdCounter: number;
@@ -108,6 +109,7 @@ export class MemStorage implements IStorage {
   private commentIdCounter: number;
   private activityIdCounter: number;
   private analyticsIdCounter: number;
+  private teamIdCounter: number;
 
   constructor() {
     this.usersData = new Map();
@@ -117,6 +119,7 @@ export class MemStorage implements IStorage {
     this.commentsData = new Map();
     this.activitiesData = new Map();
     this.analyticsData = new Map();
+    this.teamsData = new Map();
     
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
@@ -125,6 +128,7 @@ export class MemStorage implements IStorage {
     this.commentIdCounter = 1;
     this.activityIdCounter = 1;
     this.analyticsIdCounter = 1;
+    this.teamIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24 hours
@@ -147,7 +151,8 @@ export class MemStorage implements IStorage {
       fullName: 'Super Administrator',
       email: 'superadmin@writepro.com',
       role: UserRole.SUPERADMIN,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      teamId: null
     };
     this.usersData.set(superadmin.id, superadmin);
   }
@@ -160,12 +165,12 @@ export class MemStorage implements IStorage {
 
   private async migrateExistingPasswords() {
     // Check if any users have plaintext passwords and hash them
-    for (const [id, user] of this.usersData) {
+    for (const user of this.usersData.values()) {
       // Check if password is plaintext (doesn't contain a dot separator)
       if (!user.password.includes('.')) {
         const hashedPassword = await this.hashPassword(user.password);
         const updatedUser = { ...user, password: hashedPassword };
-        this.usersData.set(id, updatedUser);
+        this.usersData.set(user.id, updatedUser);
         console.log(`Migrated password for user: ${user.username}`);
       }
     }
@@ -367,6 +372,44 @@ export class MemStorage implements IStorage {
     } as Analytics;
     this.analyticsData.set(id, analytics);
     return analytics;
+  }
+
+  // Team methods
+  async getTeam(id: number): Promise<Team | undefined> {
+    return this.teamsData.get(id);
+  }
+
+  async getAllTeams(): Promise<Team[]> {
+    return Array.from(this.teamsData.values());
+  }
+
+  async getTeamsByLeader(teamLeadId: number): Promise<Team[]> {
+    return Array.from(this.teamsData.values()).filter(team => team.teamLeadId === teamLeadId);
+  }
+
+  async createTeam(teamData: InsertTeam): Promise<Team> {
+    const id = this.teamIdCounter++;
+    const now = new Date();
+    const team = { 
+      ...teamData, 
+      id, 
+      createdAt: now
+    } as Team;
+    this.teamsData.set(id, team);
+    return team;
+  }
+
+  async updateTeam(id: number, teamData: Partial<Team>): Promise<Team | undefined> {
+    const existingTeam = this.teamsData.get(id);
+    if (!existingTeam) return undefined;
+
+    const updatedTeam = { ...existingTeam, ...teamData };
+    this.teamsData.set(id, updatedTeam);
+    return updatedTeam;
+  }
+
+  async deleteTeam(id: number): Promise<void> {
+    this.teamsData.delete(id);
   }
 }
 
