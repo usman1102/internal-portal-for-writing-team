@@ -343,6 +343,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uploadedById: req.user.id
       });
       
+      // Validate task ID
+      if (!validatedData.taskId || isNaN(validatedData.taskId)) {
+        return res.status(400).send("Invalid task ID");
+      }
+      
       // Check if the task exists and the user has access to it
       const task = await storage.getTask(validatedData.taskId);
       
@@ -405,6 +410,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user.id
       });
+      
+      // Validate task ID
+      if (!validatedData.taskId || isNaN(validatedData.taskId)) {
+        return res.status(400).send("Invalid task ID");
+      }
       
       // Check if the task exists and the user has access to it
       const task = await storage.getTask(validatedData.taskId);
