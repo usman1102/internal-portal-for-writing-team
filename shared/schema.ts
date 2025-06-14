@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, doublePrecision, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -64,7 +64,7 @@ export const tasks = pgTable("tasks", {
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   priority: text("priority"),
   wordCount: integer("word_count"),
-  deadline: timestamp("deadline"),
+  deadline: timestamp("deadline", { mode: "date" }),
   createdAt: timestamp("created_at").defaultNow(),
   assignedById: integer("assigned_by_id").references(() => users.id),
   submissionDate: timestamp("submission_date", { mode: "date" }),
