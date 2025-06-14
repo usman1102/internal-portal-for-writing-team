@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Task, User, Activity, UserRole } from "@shared/schema";
+import { Task, User, Activity, UserRole, Team } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
@@ -34,6 +34,11 @@ export default function DashboardPage() {
   // Fetch activities
   const { data: activities = [], isLoading: isLoadingActivities } = useQuery<Activity[]>({
     queryKey: ["/api/activities"],
+  });
+
+  // Fetch teams
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
   });
   
   // Create task mutation
@@ -74,7 +79,29 @@ export default function DashboardPage() {
     task.status !== 'COMPLETED'
   ).length;
   
-  const availableWritersCount = users.filter(user => 
+  // Filter users based on role - TEAM_LEAD sees only their team members
+  const filteredUsers = user?.role === UserRole.TEAM_LEAD 
+    ? users.filter(u => {
+        // For team leads, show only writers and proofreaders from teams they lead
+        // Find teams led by current user
+        const teamsLedByUser = users.filter(teamMember => 
+          teamMember.teamId && 
+          users.some(lead => lead.id === user.id && lead.role === UserRole.TEAM_LEAD)
+        );
+        
+        // Show writers and proofreaders from those teams
+        return (u.role === UserRole.WRITER || u.role === UserRole.PROOFREADER) && 
+               u.teamId && teamsLedByUser.some(member => member.teamId === u.teamId);
+      })
+    : users.filter(user => 
+        user.role === UserRole.WRITER || 
+        user.role === UserRole.PROOFREADER ||
+        user.role === UserRole.TEAM_LEAD ||
+        user.role === UserRole.SALES ||
+        user.role === UserRole.SUPERADMIN
+      );
+
+  const availableWritersCount = filteredUsers.filter(user => 
     user.role === UserRole.WRITER && user.status === 'AVAILABLE'
   ).length;
   
