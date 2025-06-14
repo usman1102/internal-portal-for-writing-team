@@ -200,7 +200,7 @@ export default function DashboardPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Tasks (Unassigned)</h2>
                   <TaskTable 
-                    tasks={tasks.filter(task => !task.assignedToId).slice(0, 5)}
+                    tasks={tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined).slice(0, 5)}
                     users={filteredUsers}
                     isLoading={isLoadingTasks}
                     onTaskCreate={handleCreateTask}
