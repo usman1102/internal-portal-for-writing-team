@@ -204,14 +204,16 @@ export default function DashboardPage() {
             />
             
             {/* Team Members and Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <TeamMembers 
-                members={filteredUsers}
-                isLoading={isLoadingUsers}
-                onUpdateStatus={handleUpdateUserStatus}
-              />
+            <div className={`grid gap-6 ${user?.role === UserRole.SALES ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+              {user?.role !== UserRole.SALES && (
+                <TeamMembers 
+                  members={filteredUsers}
+                  isLoading={isLoadingUsers}
+                  onUpdateStatus={handleUpdateUserStatus}
+                />
+              )}
               
-              <div className="lg:col-span-2">
+              <div className={user?.role === UserRole.SALES ? '' : 'lg:col-span-2'}>
                 <ProjectAnalytics 
                   data={analyticsData}
                   turnAroundTime={turnAroundTime}
