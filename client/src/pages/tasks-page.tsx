@@ -14,6 +14,14 @@ export default function TasksPage() {
   // Fetch tasks
   const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+    onSuccess: (data) => {
+      console.log("Tasks received:", data);
+      if (data.length > 0) {
+        data.forEach(task => {
+          console.log(`Task ${task.id}: assignedToId=${task.assignedToId} (type: ${typeof task.assignedToId}), deadline=${task.deadline} (type: ${typeof task.deadline})`);
+        });
+      }
+    }
   });
   
   // Fetch users
