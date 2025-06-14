@@ -69,6 +69,7 @@ export default function TeamPage() {
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isEditMemberOpen, setIsEditMemberOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
   
@@ -105,6 +106,51 @@ export default function TeamPage() {
     }
   });
   
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/users/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsEditMemberOpen(false);
+      toast({
+        title: "User updated",
+        description: "Team member has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating user",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/users/${id}`);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User deleted",
+        description: "Team member has been deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting user",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Update user status mutation
   const updateUserStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
@@ -154,6 +200,25 @@ export default function TeamPage() {
   // Handle updating user status
   const handleUpdateStatus = (id: number, status: string) => {
     updateUserStatusMutation.mutate({ id, status });
+  };
+
+  // Handle editing user
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    editForm.reset({
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      status: user.status || 'ACTIVE'
+    });
+    setIsEditMemberOpen(true);
+  };
+
+  // Handle deleting user
+  const handleDeleteUser = (userId: number) => {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      deleteUserMutation.mutate(userId);
+    }
   };
   
   // Group users by role

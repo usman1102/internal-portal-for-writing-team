@@ -108,6 +108,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/users/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const userId = parseInt(req.params.id);
+      const currentUserRole = req.user?.role;
+      
+      // Only superadmin can delete users
+      if (currentUserRole !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can delete users");
+      }
+      
+      // Prevent superadmin from deleting themselves
+      if (userId === req.user?.id) {
+        return res.status(400).send("Cannot delete your own account");
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      
+      await storage.deleteUser(userId);
+      res.status(200).send("User deleted successfully");
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Tasks routes
 
   // Tasks routes
