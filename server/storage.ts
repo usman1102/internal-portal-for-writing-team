@@ -40,6 +40,7 @@ export interface IStorage {
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
+  hashPassword(password: string): Promise<string>;
 
   // Project methods
   getProject(id: number): Promise<Project | undefined>;
@@ -120,6 +121,9 @@ export class MemStorage implements IStorage {
 
     // Create default superadmin user
     this.createDefaultUsers();
+    
+    // Migrate existing plaintext passwords
+    this.migrateExistingPasswords();
   }
 
   private async createDefaultUsers() {
@@ -137,10 +141,23 @@ export class MemStorage implements IStorage {
     this.usersData.set(superadmin.id, superadmin);
   }
 
-  private async hashPassword(password: string) {
+  async hashPassword(password: string): Promise<string> {
     const salt = randomBytes(16).toString("hex");
     const buf = (await scryptAsync(password, salt, 64)) as Buffer;
     return `${buf.toString("hex")}.${salt}`;
+  }
+
+  private async migrateExistingPasswords() {
+    // Check if any users have plaintext passwords and hash them
+    for (const [id, user] of this.usersData) {
+      // Check if password is plaintext (doesn't contain a dot separator)
+      if (!user.password.includes('.')) {
+        const hashedPassword = await this.hashPassword(user.password);
+        const updatedUser = { ...user, password: hashedPassword };
+        this.usersData.set(id, updatedUser);
+        console.log(`Migrated password for user: ${user.username}`);
+      }
+    }
   }
 
   // User methods

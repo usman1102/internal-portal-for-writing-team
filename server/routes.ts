@@ -59,7 +59,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = insertUserSchema.parse(req.body);
       
-      const user = await storage.createUser(validatedData);
+      // Hash the password before creating user
+      const hashedPassword = await storage.hashPassword(validatedData.password);
+      const userDataWithHashedPassword = {
+        ...validatedData,
+        password: hashedPassword
+      };
+      
+      const user = await storage.createUser(userDataWithHashedPassword);
       res.status(201).json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
