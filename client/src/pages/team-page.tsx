@@ -856,6 +856,110 @@ export default function TeamPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Teams Management Tab */}
+              {user?.role === UserRole.SUPERADMIN && (
+                <TabsContent value="teams">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>Teams Management</CardTitle>
+                        <CardDescription>
+                          Create and manage teams for organizing writers and proofreaders
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => setIsCreateTeamOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Create Team
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {teams.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Team Name</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead>Team Lead</TableHead>
+                              <TableHead>Members</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {teams.map((team) => {
+                              const teamLead = users.find(u => u.id === team.teamLeadId);
+                              const teamMembers = users.filter(u => u.teamId === team.id);
+                              
+                              return (
+                                <TableRow key={team.id}>
+                                  <TableCell>
+                                    <div className="font-medium">{team.name}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-sm text-gray-500">
+                                      {team.description || "No description"}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {teamLead ? (
+                                      <div className="flex items-center">
+                                        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm">
+                                          {getInitials(teamLead.fullName)}
+                                        </div>
+                                        <div className="ml-2">
+                                          <div className="text-sm font-medium">{teamLead.fullName}</div>
+                                          <div className="text-xs text-gray-500">@{teamLead.username}</div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400">No lead assigned</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-sm">
+                                      {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {teamMembers.map(m => m.fullName).join(', ') || 'No members'}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditTeam(team)}
+                                      >
+                                        <Edit3 className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteTeam(team.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="text-center py-10 text-gray-500">
+                          <Building className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                          <p className="text-lg font-medium mb-2">No teams created yet</p>
+                          <p className="mb-4">Create teams to organize your writers and manage projects effectively</p>
+                          <Button onClick={() => setIsCreateTeamOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Create Your First Team
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </main>
@@ -1132,6 +1236,182 @@ export default function TeamPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Create Team Dialog */}
+      <Dialog open={isCreateTeamOpen} onOpenChange={setIsCreateTeamOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+            <DialogDescription>
+              Create a new team to organize writers and proofreaders
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...teamForm}>
+            <form onSubmit={teamForm.handleSubmit(onCreateTeam)} className="space-y-4">
+              <FormField
+                control={teamForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter team name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={teamForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter team description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={teamForm.control}
+                name="teamLeadId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team Lead (Optional)</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      defaultValue={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select team lead" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {users.filter(u => u.role === UserRole.TEAM_LEAD || u.role === UserRole.SUPERADMIN).map((lead) => (
+                          <SelectItem key={lead.id} value={lead.id.toString()}>
+                            {lead.fullName} (@{lead.username})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateTeamOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={createTeamMutation.isPending}
+                >
+                  {createTeamMutation.isPending ? "Creating..." : "Create Team"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Team Dialog */}
+      <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+            <DialogDescription>
+              Update team information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editTeamForm}>
+            <form onSubmit={editTeamForm.handleSubmit(onEditTeam)} className="space-y-4">
+              <FormField
+                control={editTeamForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter team name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editTeamForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter team description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editTeamForm.control}
+                name="teamLeadId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team Lead (Optional)</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      defaultValue={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select team lead" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {users.filter(u => u.role === UserRole.TEAM_LEAD || u.role === UserRole.SUPERADMIN).map((lead) => (
+                          <SelectItem key={lead.id} value={lead.id.toString()}>
+                            {lead.fullName} (@{lead.username})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditTeamOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={updateTeamMutation.isPending}
+                >
+                  {updateTeamMutation.isPending ? "Updating..." : "Update Team"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Team Member Dialog */}
       <Dialog open={isEditMemberOpen} onOpenChange={setIsEditMemberOpen}>
