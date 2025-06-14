@@ -220,7 +220,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         userId: req.user.id,
         taskId: task.id,
-        projectId: null,
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
@@ -322,7 +321,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createActivity({
           userId: req.user.id,
           taskId: taskId,
-          projectId: null,
           action,
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });

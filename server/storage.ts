@@ -48,7 +48,6 @@ export interface IStorage {
   getTask(id: number): Promise<Task | undefined>;
   getAllTasks(): Promise<Task[]>;
   getTasksByAssignee(userId: number): Promise<Task[]>;
-  getTasksByProject(projectId: number): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, taskData: Partial<Task>): Promise<Task | undefined>;
 
@@ -112,7 +111,6 @@ export class MemStorage implements IStorage {
     this.teamsData = new Map();
     
     this.userIdCounter = 1;
-    this.projectIdCounter = 1;
     this.taskIdCounter = 1;
     this.fileIdCounter = 1;
     this.commentIdCounter = 1;
@@ -127,8 +125,7 @@ export class MemStorage implements IStorage {
     // Create default superadmin user
     this.createDefaultUsers();
     
-    // Create sample projects
-    this.createSampleProjects();
+
     
     // Migrate existing plaintext passwords
     this.migrateExistingPasswords();
@@ -204,30 +201,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.usersData.values());
   }
 
-  // Project methods
-  async getProject(id: number): Promise<Project | undefined> {
-    return this.projectsData.get(id);
-  }
 
-  async getAllProjects(): Promise<Project[]> {
-    return Array.from(this.projectsData.values());
-  }
-
-  async createProject(projectData: InsertProject): Promise<Project> {
-    const id = this.projectIdCounter++;
-    const project = { ...projectData, id } as Project;
-    this.projectsData.set(id, project);
-    return project;
-  }
-
-  async updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined> {
-    const project = await this.getProject(id);
-    if (!project) return undefined;
-    
-    const updatedProject = { ...project, ...projectData };
-    this.projectsData.set(id, updatedProject);
-    return updatedProject;
-  }
 
   // Task methods
   async getTask(id: number): Promise<Task | undefined> {
@@ -243,10 +217,7 @@ export class MemStorage implements IStorage {
       .filter(task => task.assignedToId === userId);
   }
 
-  async getTasksByProject(projectId: number): Promise<Task[]> {
-    return Array.from(this.tasksData.values())
-      .filter(task => task.projectId === projectId);
-  }
+
 
   async createTask(taskData: InsertTask): Promise<Task> {
     const id = this.taskIdCounter++;

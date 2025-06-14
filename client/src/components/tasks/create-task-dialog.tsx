@@ -59,7 +59,6 @@ export function CreateTaskDialog({
     deadline: z.string().refine(date => !isNaN(Date.parse(date)), {
       message: "Please select a valid date",
     }),
-    projectId: z.number().optional(),
     assignedToId: z.number().optional(),
     budget: z.number().min(0, "Budget cannot be negative").optional(),
   });
