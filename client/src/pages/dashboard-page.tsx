@@ -193,19 +193,50 @@ export default function DashboardPage() {
               />
             </div>
             
-            {/* Task Table */}
-            <TaskTable 
-              tasks={tasks.slice(0, 5)} // Show only 5 most recent tasks on dashboard
-              users={filteredUsers}
-              isLoading={isLoadingTasks}
-              onTaskCreate={handleCreateTask}
-              onTaskUpdate={handleUpdateTask}
-              canCreateTasks={canCreateTasks}
-            />
+            {/* Task Tables for Writers */}
+            {user?.role === UserRole.WRITER ? (
+              <div className="space-y-6">
+                {/* Unassigned Tasks */}
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Tasks (Unassigned)</h2>
+                  <TaskTable 
+                    tasks={tasks.filter(task => !task.assignedToId).slice(0, 5)}
+                    users={filteredUsers}
+                    isLoading={isLoadingTasks}
+                    onTaskCreate={handleCreateTask}
+                    onTaskUpdate={handleUpdateTask}
+                    canCreateTasks={canCreateTasks}
+                  />
+                </div>
+                
+                {/* My Assigned Tasks */}
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">My Assigned Tasks</h2>
+                  <TaskTable 
+                    tasks={tasks.filter(task => task.assignedToId === user?.id).slice(0, 5)}
+                    users={filteredUsers}
+                    isLoading={isLoadingTasks}
+                    onTaskCreate={handleCreateTask}
+                    onTaskUpdate={handleUpdateTask}
+                    canCreateTasks={canCreateTasks}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* Regular Task Table for other roles */
+              <TaskTable 
+                tasks={tasks.slice(0, 5)} // Show only 5 most recent tasks on dashboard
+                users={filteredUsers}
+                isLoading={isLoadingTasks}
+                onTaskCreate={handleCreateTask}
+                onTaskUpdate={handleUpdateTask}
+                canCreateTasks={canCreateTasks}
+              />
+            )}
             
             {/* Team Members and Analytics */}
-            <div className={`grid gap-6 ${user?.role === UserRole.SALES ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
-              {user?.role !== UserRole.SALES && (
+            <div className={`grid gap-6 ${(user?.role === UserRole.SALES || user?.role === UserRole.WRITER) ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+              {user?.role !== UserRole.SALES && user?.role !== UserRole.WRITER && (
                 <TeamMembers 
                   members={filteredUsers}
                   isLoading={isLoadingUsers}
@@ -213,7 +244,7 @@ export default function DashboardPage() {
                 />
               )}
               
-              <div className={user?.role === UserRole.SALES ? '' : 'lg:col-span-2'}>
+              <div className={(user?.role === UserRole.SALES || user?.role === UserRole.WRITER) ? '' : 'lg:col-span-2'}>
                 <ProjectAnalytics 
                   data={analyticsData}
                   turnAroundTime={turnAroundTime}

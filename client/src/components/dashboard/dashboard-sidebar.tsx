@@ -127,8 +127,8 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             Team
           </SidebarLink>
 
-          {/* Management menu items - hidden for sales users */}
-          {user.role !== UserRole.SALES && (
+          {/* Management menu items - hidden for sales and writer users */}
+          {user.role !== UserRole.SALES && user.role !== UserRole.WRITER && (
             <div>
               <div className="px-4 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Management
