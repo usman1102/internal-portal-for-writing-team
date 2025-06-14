@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,6 +30,16 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   role: text("role").$type<UserRole>().notNull(),
   status: text("status").default('AVAILABLE'),
+  teamId: integer("team_id"),
+});
+
+// Teams schema
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  teamLeadId: integer("team_lead_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Projects schema
@@ -131,3 +142,23 @@ export type Activity = typeof activities.$inferSelect;
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type Analytics = typeof analytics.$inferSelect;
+
+export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ one }) => ({
+  team: one(teams, {
+    fields: [users.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  teamLead: one(users, {
+    fields: [teams.teamLeadId],
+    references: [users.id],
+  }),
+  members: many(users),
+}));

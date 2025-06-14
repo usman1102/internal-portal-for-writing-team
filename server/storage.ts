@@ -6,6 +6,7 @@ import {
   comments, 
   activities, 
   analytics,
+  teams,
   type User, 
   type InsertUser,
   type Project,
@@ -20,6 +21,8 @@ import {
   type InsertActivity,
   type Analytics,
   type InsertAnalytics,
+  type Team,
+  type InsertTeam,
   UserRole,
   TaskStatus
 } from "@shared/schema";
@@ -74,6 +77,14 @@ export interface IStorage {
   // Analytics methods
   getAnalytics(period: string): Promise<Analytics[]>;
   createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
+
+  // Team methods
+  getTeam(id: number): Promise<Team | undefined>;
+  getAllTeams(): Promise<Team[]>;
+  getTeamsByLeader(teamLeadId: number): Promise<Team[]>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: number, teamData: Partial<Team>): Promise<Team | undefined>;
+  deleteTeam(id: number): Promise<void>;
 
   // Session store
   sessionStore: session.Store;
