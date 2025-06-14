@@ -62,7 +62,7 @@ export const tasks = pgTable("tasks", {
   projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   assignedById: integer("assigned_by_id").references(() => users.id).notNull(),
-  status: text("status").$type<TaskStatus>().default('NEW'),
+  status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   deadline: timestamp("deadline"),
   submissionDate: timestamp("submission_date"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -72,7 +72,7 @@ export const tasks = pgTable("tasks", {
 // Files schema
 export const files = pgTable("files", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
   uploadedById: integer("uploaded_by_id").references(() => users.id),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
@@ -85,7 +85,7 @@ export const files = pgTable("files", {
 // Comments schema
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -127,11 +127,15 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, creat
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
-export const insertFileSchema = createInsertSchema(files).omit({ id: true, uploadedAt: true });
+export const insertFileSchema = createInsertSchema(files).omit({ id: true, uploadedAt: true }).extend({
+  taskId: z.number()
+});
 export type InsertFile = z.infer<typeof insertFileSchema>;
 export type File = typeof files.$inferSelect;
 
-export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true }).extend({
+  taskId: z.number()
+});
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 
