@@ -22,10 +22,14 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import { db, pool } from "./db";
+import { eq, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 const scryptAsync = promisify(scrypt);
 
 // Define the Storage interface
@@ -372,4 +376,186 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  // Task methods
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
+  }
+
+  async getAllTasks(): Promise<Task[]> {
+    return await db.select().from(tasks);
+  }
+
+  async getTasksByAssignee(userId: number): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.assignedToId, userId));
+  }
+
+  async createTask(taskData: InsertTask): Promise<Task> {
+    const [task] = await db
+      .insert(tasks)
+      .values(taskData)
+      .returning();
+    return task;
+  }
+
+  async updateTask(id: number, taskData: Partial<Task>): Promise<Task | undefined> {
+    const [task] = await db
+      .update(tasks)
+      .set(taskData)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task || undefined;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  // File methods
+  async getFile(id: number): Promise<File | undefined> {
+    const [file] = await db.select().from(files).where(eq(files.id, id));
+    return file || undefined;
+  }
+
+  async getFilesByTask(taskId: number): Promise<File[]> {
+    return await db.select().from(files).where(eq(files.taskId, taskId));
+  }
+
+  async createFile(fileData: InsertFile): Promise<File> {
+    const [file] = await db
+      .insert(files)
+      .values(fileData)
+      .returning();
+    return file;
+  }
+
+  async deleteFile(id: number): Promise<void> {
+    await db.delete(files).where(eq(files.id, id));
+  }
+
+  // Comment methods
+  async getComment(id: number): Promise<Comment | undefined> {
+    const [comment] = await db.select().from(comments).where(eq(comments.id, id));
+    return comment || undefined;
+  }
+
+  async getCommentsByTask(taskId: number): Promise<Comment[]> {
+    return await db.select().from(comments).where(eq(comments.taskId, taskId));
+  }
+
+  async createComment(commentData: InsertComment): Promise<Comment> {
+    const [comment] = await db
+      .insert(comments)
+      .values(commentData)
+      .returning();
+    return comment;
+  }
+
+  // Activity methods
+  async getActivity(id: number): Promise<Activity | undefined> {
+    const [activity] = await db.select().from(activities).where(eq(activities.id, id));
+    return activity || undefined;
+  }
+
+  async getAllActivities(): Promise<Activity[]> {
+    return await db.select().from(activities);
+  }
+
+  async createActivity(activityData: InsertActivity): Promise<Activity> {
+    const [activity] = await db
+      .insert(activities)
+      .values(activityData)
+      .returning();
+    return activity;
+  }
+
+  // Team methods
+  async getTeam(id: number): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team || undefined;
+  }
+
+  async getAllTeams(): Promise<Team[]> {
+    return await db.select().from(teams);
+  }
+
+  async getTeamsByLeader(teamLeadId: number): Promise<Team[]> {
+    return await db.select().from(teams).where(eq(teams.teamLeadId, teamLeadId));
+  }
+
+  async createTeam(teamData: InsertTeam): Promise<Team> {
+    const [team] = await db
+      .insert(teams)
+      .values(teamData)
+      .returning();
+    return team;
+  }
+
+  async updateTeam(id: number, teamData: Partial<Team>): Promise<Team | undefined> {
+    const [team] = await db
+      .update(teams)
+      .set(teamData)
+      .where(eq(teams.id, id))
+      .returning();
+    return team || undefined;
+  }
+
+  async deleteTeam(id: number): Promise<void> {
+    await db.delete(teams).where(eq(teams.id, id));
+  }
+}
+
+export const storage = new DatabaseStorage();
