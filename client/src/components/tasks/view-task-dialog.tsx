@@ -90,7 +90,7 @@ export function ViewTaskDialog({
   const { toast } = useToast();
 
   // Fetch files for this task
-  const { data: files = [], isLoading: filesLoading } = useQuery<File[]>({
+  const { data: files = [], isLoading: filesLoading } = useQuery<TaskFile[]>({
     queryKey: [`/api/files/${task.id}`],
     enabled: isOpen && !!task.id,
   });
@@ -153,13 +153,13 @@ export function ViewTaskDialog({
   });
 
   // Categorize files by type
-  const instructionFiles = files.filter(f => f.category === FileCategory.INSTRUCTION);
-  const draftFiles = files.filter(f => f.category === FileCategory.DRAFT);
-  const finalFiles = files.filter(f => f.category === FileCategory.FINAL);
-  const feedbackFiles = files.filter(f => f.category === FileCategory.FEEDBACK);
+  const instructionFiles = files.filter(f => f.category === 'INSTRUCTION');
+  const draftFiles = files.filter(f => f.category === 'DRAFT');
+  const finalFiles = files.filter(f => f.category === 'FINAL');
+  const feedbackFiles = files.filter(f => f.category === 'FEEDBACK');
 
   // File upload handlers
-  const handleFileUpload = (fileList: FileList | null, category: FileCategory) => {
+  const handleFileUpload = (fileList: FileList | null, category: string) => {
     if (!fileList) return;
     
     const filesArray = Array.from(fileList);
@@ -178,7 +178,7 @@ export function ViewTaskDialog({
     });
 
     if (validFiles.length > 0) {
-      uploadFileMutation.mutate({ files: validFiles, category });
+      uploadFileMutation.mutate({ files: validFiles, category: category as FileCategory });
     }
   };
 
@@ -192,7 +192,7 @@ export function ViewTaskDialog({
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, category: FileCategory) => {
+  const handleDrop = useCallback((e: React.DragEvent, category: string) => {
     e.preventDefault();
     setIsDragOver(false);
     handleFileUpload(e.dataTransfer.files, category);
@@ -436,7 +436,7 @@ export function ViewTaskDialog({
                             const input = document.createElement('input');
                             input.type = 'file';
                             input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.DRAFT);
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'DRAFT');
                             input.click();
                           }}
                           disabled={uploadFileMutation.isPending}
@@ -488,7 +488,7 @@ export function ViewTaskDialog({
                             const input = document.createElement('input');
                             input.type = 'file';
                             input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.FINAL);
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'FINAL');
                             input.click();
                           }}
                           disabled={uploadFileMutation.isPending}
@@ -540,7 +540,7 @@ export function ViewTaskDialog({
                             const input = document.createElement('input');
                             input.type = 'file';
                             input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.FEEDBACK);
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'FEEDBACK');
                             input.click();
                           }}
                           disabled={uploadFileMutation.isPending}
