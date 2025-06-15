@@ -14,13 +14,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      // Only superadmin and team leads can view all users
-      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
+      const users = await storage.getAllUsers();
+      
+      // Filter users based on role permissions
+      if (req.user?.role === UserRole.SUPERADMIN) {
+        // Superadmin can see all users
+        res.json(users);
+      } else if (req.user?.role === UserRole.TEAM_LEAD) {
+        // Team leads can see all users (existing behavior)
+        res.json(users);
+      } else if (req.user?.role === UserRole.WRITER || req.user?.role === UserRole.PROOFREADER) {
+        // Writers and proofreaders can see basic info of all users for task assignments
+        // but hide sensitive data like passwords
+        const filteredUsers = users.map(user => ({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          status: user.status,
+          teamId: user.teamId
+        }));
+        res.json(filteredUsers);
+      } else {
+        // Sales users don't need to see other users
         return res.status(403).send("Unauthorized to view users");
       }
-      
-      const users = await storage.getAllUsers();
-      res.json(users);
     } catch (error) {
       next(error);
     }
