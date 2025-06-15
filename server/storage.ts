@@ -225,7 +225,9 @@ export class MemStorage implements IStorage {
     const task = { 
       ...taskData, 
       id, 
-      createdAt: now
+      createdAt: now,
+      assignedToId: null, // Ensure tasks start unassigned
+      status: TaskStatus.NEW
     } as Task;
     this.tasksData.set(id, task);
     return task;

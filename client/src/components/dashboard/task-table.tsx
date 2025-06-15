@@ -27,6 +27,7 @@ import { Task, TaskStatus, User } from "@shared/schema";
 import { cn, formatDate, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { CreateTaskDialog } from "../tasks/create-task-dialog";
 import { ViewTaskDialog } from "../tasks/view-task-dialog";
+import { EditTaskDialog } from "../tasks/edit-task-dialog";
 import { Plus } from "lucide-react";
 
 interface TaskTableProps {
@@ -52,6 +53,7 @@ export function TaskTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   const ITEMS_PER_PAGE = 5;
   
@@ -87,6 +89,10 @@ export function TaskTable({
   
   const handleViewTask = (task: Task) => {
     setSelectedTask(task);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
   };
 
   return (
@@ -251,13 +257,26 @@ export function TaskTable({
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        className="text-primary hover:text-primary-dark"
-                        onClick={() => handleViewTask(task)}
-                      >
-                        View
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-primary hover:text-primary-dark"
+                          onClick={() => handleViewTask(task)}
+                        >
+                          View
+                        </Button>
+                        {canCreateTasks && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => handleEditTask(task)}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
