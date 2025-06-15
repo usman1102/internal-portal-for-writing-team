@@ -530,9 +530,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Task not found");
       }
       
-      // Writers can only access files for their assigned tasks
+      // Writers can access files for their assigned tasks, plus instruction files for any task
       if (req.user?.role === 'WRITER' && task.assignedToId !== req.user.id) {
-        return res.status(403).send("Unauthorized to access files for this task");
+        // Allow access but filter to only instruction files
+        const files = await storage.getFilesByTask(taskId);
+        const instructionFiles = files.filter(file => file.category === 'INSTRUCTION');
+        return res.json(instructionFiles);
       }
       
       const files = await storage.getFilesByTask(taskId);
@@ -571,8 +574,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Task not found");
       }
       
-      // Writers can only download files for their assigned tasks
-      if (req.user?.role === 'WRITER' && task.assignedToId !== req.user.id) {
+      // Writers can download files for their assigned tasks, plus instruction files for any task
+      if (req.user?.role === 'WRITER' && task.assignedToId !== req.user.id && file.category !== 'INSTRUCTION') {
         return res.status(403).send("Unauthorized to download files for this task");
       }
       

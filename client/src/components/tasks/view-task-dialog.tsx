@@ -251,6 +251,15 @@ export function ViewTaskDialog({
                         (task.assignedToId === user?.id && 
                          (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER));
 
+  // Special permission for sales to delete instruction files they uploaded
+  const canDeleteInstructionFiles = (file: any) => {
+    if (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD) return true;
+    if (user?.role === UserRole.SALES && file.category === 'INSTRUCTION') return true;
+    if (task.assignedToId === user?.id && 
+        (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER)) return true;
+    return false;
+  };
+
   const handleStatusChange = async (newStatus: TaskStatus) => {
     try {
       setIsSubmitting(true);
@@ -497,7 +506,7 @@ export function ViewTaskDialog({
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              {canManageFiles && (
+                              {canDeleteInstructionFiles(file) && (
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
