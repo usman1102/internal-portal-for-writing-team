@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useState, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Upload, X, FileText, Image, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,12 @@ const formSchema = z.object({
   clientName: z.string().min(1, "Client name is required"),
   deadline: z.date().optional(),
 });
+
+interface UploadedFile {
+  file: File;
+  id: string;
+  preview?: string;
+}
 
 interface CreateTaskDialogProps {
   isOpen: boolean;
@@ -49,6 +56,9 @@ export function CreateTaskDialog({
   onCreateTask,
 }: CreateTaskDialogProps) {
   const { toast } = useToast();
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,12 +71,115 @@ export function CreateTaskDialog({
     },
   });
 
+  // File handling functions
+  const generateFileId = () => Math.random().toString(36).substr(2, 9);
+
+  const handleFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const validFiles: UploadedFile[] = [];
+
+    fileArray.forEach((file) => {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create preview for images
+      let preview: string | undefined;
+      if (file.type.startsWith('image/')) {
+        preview = URL.createObjectURL(file);
+      }
+
+      validFiles.push({
+        file,
+        id: generateFileId(),
+        preview,
+      });
+    });
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+  }, [toast]);
+
+  const removeFile = (id: string) => {
+    setUploadedFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === id);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prev.filter(f => f.id !== id);
+    });
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    if (e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  }, [handleFiles]);
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+
+    if (files.length > 0) {
+      handleFiles(files);
+      toast({
+        title: "Files pasted",
+        description: `${files.length} file(s) added from clipboard`,
+      });
+    }
+  }, [handleFiles, toast]);
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
+    if (fileType.includes('text') || fileType.includes('document')) return <FileText className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       // Format the data before submitting
       const taskData = {
         ...data,
         deadline: data.deadline ? data.deadline.toISOString() : undefined,
+        files: uploadedFiles.map(f => ({
+          name: f.file.name,
+          size: f.file.size,
+          type: f.file.type,
+        })),
       };
 
       // Call the onCreateTask callback if provided
@@ -79,8 +192,12 @@ export function CreateTaskDialog({
         description: "The task has been created successfully and is available for assignment",
       });
 
-      // Reset form and close dialog
+      // Reset form, clear files, and close dialog
       form.reset();
+      uploadedFiles.forEach(f => {
+        if (f.preview) URL.revokeObjectURL(f.preview);
+      });
+      setUploadedFiles([]);
       onClose();
     } catch (error) {
       toast({
@@ -93,13 +210,13 @@ export function CreateTaskDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" onPaste={handlePaste}>
             {/* Task Title */}
             <FormField
               control={form.control}
@@ -211,6 +328,99 @@ export function CreateTaskDialog({
                 </FormItem>
               )}
             />
+
+            {/* File Upload Section */}
+            <div className="space-y-4">
+              <FormLabel>Files (Optional)</FormLabel>
+              
+              {/* Drag and Drop Area */}
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                  isDragOver 
+                    ? "border-primary bg-primary/5 scale-[1.02]" 
+                    : "border-gray-300 hover:border-gray-400"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Upload className="h-10 w-10 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium mb-2">
+                  Drag and drop files here
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  or click to browse, or paste from clipboard (Ctrl+V)
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mb-2"
+                >
+                  Choose Files
+                </Button>
+                <p className="text-xs text-gray-400">
+                  Maximum file size: 10MB per file
+                </p>
+              </div>
+
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileInputChange}
+                className="hidden"
+                accept="*/*"
+              />
+
+              {/* Uploaded Files List */}
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Uploaded Files ({uploadedFiles.length})</h4>
+                  <div className="space-y-2">
+                    {uploadedFiles.map((uploadedFile) => (
+                      <div
+                        key={uploadedFile.id}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                      >
+                        {uploadedFile.preview ? (
+                          <img
+                            src={uploadedFile.preview}
+                            alt={uploadedFile.file.name}
+                            className="h-10 w-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                            {getFileIcon(uploadedFile.file.type)}
+                          </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {uploadedFile.file.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(uploadedFile.file.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(uploadedFile.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={onClose}>
