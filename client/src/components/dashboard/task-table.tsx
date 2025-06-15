@@ -349,7 +349,6 @@ export function TaskTable({
         isOpen={isCreateTaskOpen}
         onClose={() => setIsCreateTaskOpen(false)}
         onCreateTask={onTaskCreate}
-        users={users}
       />
       
       {/* View Task Dialog */}
