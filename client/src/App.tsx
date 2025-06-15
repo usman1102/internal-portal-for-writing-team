@@ -7,7 +7,7 @@ import { queryClient } from "./lib/queryClient";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import TasksPage from "@/pages/tasks-page";
-
+import AnalyticsPage from "@/pages/analytics-page";
 import TeamPage from "@/pages/team-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";

@@ -116,8 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const userId = parseInt(req.params.id);
-      // Only superadmin and team leads can update users
-      if (req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
+      // Users can update their own profile, or superadmin/team leads can update others
+      if (req.user?.id !== userId && req.user?.role !== UserRole.SUPERADMIN && req.user?.role !== UserRole.TEAM_LEAD) {
         return res.status(403).send("Unauthorized to update users");
       }
       

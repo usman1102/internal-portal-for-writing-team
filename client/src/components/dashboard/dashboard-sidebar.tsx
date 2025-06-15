@@ -9,7 +9,8 @@ import {
   LayoutDashboard,
   ClipboardList,
   Folder,
-  Users
+  Users,
+  BarChart3
 } from "lucide-react";
 import { UserProfileDialog } from "@/components/user/user-profile-dialog";
 
@@ -109,10 +110,14 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           >
             Tasks
           </SidebarLink>
-          
 
-          
-
+          <SidebarLink 
+            href="/analytics" 
+            icon={<BarChart3 size={18} />} 
+            active={location === '/analytics'}
+          >
+            Analytics
+          </SidebarLink>
           
           {(user.role === UserRole.SUPERADMIN || user.role === UserRole.TEAM_LEAD) && (
             <SidebarLink 
