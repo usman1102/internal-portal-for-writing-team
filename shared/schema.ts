@@ -78,7 +78,7 @@ export const files = pgTable("files", {
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
-  fileUrl: text("file_url").notNull(),
+  fileContent: text("file_content").notNull(), // Base64 encoded file content
   uploadedAt: timestamp("uploaded_at").defaultNow(),
   category: text("category").$type<FileCategory>().notNull().default(FileCategory.INSTRUCTION),
   isSubmission: boolean("is_submission").default(false),

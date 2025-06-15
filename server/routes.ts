@@ -542,6 +542,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download file route
+  app.get("/api/files/download/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const fileId = parseInt(req.params.id);
+      
+      if (isNaN(fileId)) {
+        return res.status(400).send("Invalid file ID");
+      }
+      
+      // Get the file
+      const file = await storage.getFile(fileId);
+      
+      if (!file) {
+        return res.status(404).send("File not found");
+      }
+      
+      // Check if the task exists and the user has access to it
+      if (!file.taskId) {
+        return res.status(400).send("Invalid task ID in file record");
+      }
+      
+      const task = await storage.getTask(file.taskId);
+      
+      if (!task) {
+        return res.status(404).send("Task not found");
+      }
+      
+      // Writers can only download files for their assigned tasks
+      if (req.user?.role === 'WRITER' && task.assignedToId !== req.user.id) {
+        return res.status(403).send("Unauthorized to download files for this task");
+      }
+      
+      // Decode base64 content
+      const fileBuffer = Buffer.from(file.fileContent, 'base64');
+      
+      // Set appropriate headers
+      res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+      res.setHeader('Content-Type', file.fileType);
+      res.setHeader('Content-Length', fileBuffer.length);
+      
+      // Send the file
+      res.send(fileBuffer);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Delete file route
   app.delete("/api/files/:id", async (req, res, next) => {
     try {
