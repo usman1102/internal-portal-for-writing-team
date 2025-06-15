@@ -31,6 +31,10 @@ export const users = pgTable("users", {
   role: text("role").$type<UserRole>().notNull(),
   status: text("status").default('AVAILABLE'),
   teamId: integer("team_id"),
+  dateOfBirth: text("date_of_birth"),
+  city: text("city"),
+  degree: text("degree"),
+  theme: text("theme").default("light"),
 });
 
 // Teams schema

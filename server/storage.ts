@@ -137,7 +137,11 @@ export class MemStorage implements IStorage {
       email: 'superadmin@writepro.com',
       role: UserRole.SUPERADMIN,
       status: 'ACTIVE',
-      teamId: null
+      teamId: null,
+      dateOfBirth: null,
+      city: null,
+      degree: null,
+      theme: "light"
     };
     this.usersData.set(superadmin.id, superadmin);
   }

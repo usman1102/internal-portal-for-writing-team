@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn, getInitials } from "@/lib/utils";
@@ -10,6 +11,7 @@ import {
   Folder,
   Users
 } from "lucide-react";
+import { UserProfileDialog } from "@/components/user/user-profile-dialog";
 
 interface SidebarLinkProps {
   href: string;
