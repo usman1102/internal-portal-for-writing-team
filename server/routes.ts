@@ -472,6 +472,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete file route
+  app.delete("/api/files/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const fileId = parseInt(req.params.id);
+      
+      if (isNaN(fileId)) {
+        return res.status(400).send("Invalid file ID");
+      }
+      
+      // Get the file to check permissions
+      const file = await storage.getFile(fileId);
+      
+      if (!file) {
+        return res.status(404).send("File not found");
+      }
+      
+      // Check if the task exists and the user has permission to delete files
+      const task = await storage.getTask(file.taskId);
+      
+      if (!task) {
+        return res.status(404).send("Task not found");
+      }
+      
+      const userRole = req.user?.role;
+      const isTaskAssignee = task.assignedToId === req.user?.id;
+      const isFileUploader = file.uploadedById === req.user?.id;
+      const isSuperadmin = userRole === UserRole.SUPERADMIN;
+      const isSales = userRole === UserRole.SALES;
+      const isTeamLead = userRole === UserRole.TEAM_LEAD;
+      
+      // Permission check: superadmin, sales, team leads, or file uploader (writers/proofreaders for their own files)
+      const canDeleteFile = isSuperadmin || isSales || isTeamLead || 
+                           (isTaskAssignee && isFileUploader && 
+                            (userRole === UserRole.WRITER || userRole === UserRole.PROOFREADER));
+      
+      if (!canDeleteFile) {
+        return res.status(403).send("Unauthorized to delete this file");
+      }
+      
+      await storage.deleteFile(fileId);
+      res.status(200).send("File deleted successfully");
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Comments routes
   app.post("/api/comments", async (req, res, next) => {
     try {

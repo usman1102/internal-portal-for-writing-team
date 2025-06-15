@@ -52,6 +52,7 @@ export interface IStorage {
   getFile(id: number): Promise<File | undefined>;
   getFilesByTask(taskId: number): Promise<File[]>;
   createFile(file: InsertFile): Promise<File>;
+  deleteFile(id: number): Promise<void>;
 
   // Comment methods
   getComment(id: number): Promise<Comment | undefined>;
@@ -266,6 +267,10 @@ export class MemStorage implements IStorage {
     } as File;
     this.filesData.set(id, file);
     return file;
+  }
+
+  async deleteFile(id: number): Promise<void> {
+    this.filesData.delete(id);
   }
 
   // Comment methods

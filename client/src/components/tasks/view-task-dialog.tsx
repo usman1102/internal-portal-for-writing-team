@@ -201,7 +201,15 @@ export function ViewTaskDialog({
   // Check user permissions for file uploads
   const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
   const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
-  const canUploadFeedback = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.PROOFREADER);
+  const canUploadFeedback = user?.role === UserRole.PROOFREADER || 
+                           (user?.role === UserRole.TEAM_LEAD && assignedUser?.teamId === user?.teamId);
+  
+  // Check permissions for file deletion/management
+  const canManageFiles = user?.role === UserRole.SUPERADMIN || 
+                        user?.role === UserRole.SALES ||
+                        (user?.role === UserRole.TEAM_LEAD && assignedUser?.teamId === user?.teamId) ||
+                        (task.assignedToId === user?.id && 
+                         (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER));
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     try {
