@@ -222,6 +222,9 @@ export function ViewTaskDialog({
   }, []);
 
   // Check user permissions for file uploads
+  const canUploadInstructions = user?.role === UserRole.SUPERADMIN || 
+                               user?.role === UserRole.SALES ||
+                               user?.role === UserRole.TEAM_LEAD;
   const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
   const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
   const canUploadFeedback = user?.role === UserRole.PROOFREADER || 
@@ -421,9 +424,28 @@ export function ViewTaskDialog({
                 <div className="space-y-6">
                   {/* Instruction Files Section */}
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                      <h4 className="text-sm font-medium">Instruction Files ({instructionFiles.length})</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        <h4 className="text-sm font-medium">Instruction Files ({instructionFiles.length})</h4>
+                      </div>
+                      {canUploadInstructions && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'INSTRUCTION');
+                            input.click();
+                          }}
+                          disabled={uploadFileMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Upload Instructions
+                        </Button>
+                      )}
                     </div>
                     {instructionFiles.length > 0 ? (
                       <div className="space-y-2">
