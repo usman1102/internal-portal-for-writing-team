@@ -9,11 +9,7 @@ import {
   ClipboardList,
   Folder,
   BarChart,
-  Users,
-  CheckSquare,
-  FileCheck,
-  Wallet,
-  Clock
+  Users
 } from "lucide-react";
 
 interface SidebarLinkProps {
@@ -127,50 +123,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             Team
           </SidebarLink>
 
-          {/* Sales specific menu items */}
-          {user.role === UserRole.SALES && (
-            <div>
-              <div className="px-4 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Management
-              </div>
-              
-              <SidebarLink
-                href="/task-assignment"
-                icon={<CheckSquare size={18} />}
-                active={location === '/task-assignment'}
-              >
-                Task Assignment
-              </SidebarLink>
-              
-              <SidebarLink
-                href="/review-submissions"
-                icon={<FileCheck size={18} />}
-                active={location === '/review-submissions'}
-              >
-                Review Submissions
-              </SidebarLink>
-              
-              <div className="px-4 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Sales
-              </div>
-              
-              <SidebarLink
-                href="/financial"
-                icon={<Wallet size={18} />}
-                active={location === '/financial'}
-              >
-                Financial
-              </SidebarLink>
-              
-              <SidebarLink
-                href="/deadlines"
-                icon={<Clock size={18} />}
-                active={location === '/deadlines'}
-              >
-                Deadlines
-              </SidebarLink>
-            </div>
-          )}
+
         </nav>
 
         <div className="p-4 border-t border-gray-200">
