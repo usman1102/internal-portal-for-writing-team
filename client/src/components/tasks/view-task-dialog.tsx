@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
-import { Task, TaskStatus, User, UserRole, File } from "@shared/schema";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Task, TaskStatus, User, UserRole, File as TaskFile, FileCategory } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,7 +44,9 @@ import {
   Hash,
   Download,
   Image,
-  File as FileIcon
+  File as FileIcon,
+  X,
+  Plus
 } from "lucide-react";
 import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +80,13 @@ export function ViewTaskDialog({
 }: ViewTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: File[] }>({
+    DRAFT: [],
+    FINAL: [],
+    FEEDBACK: []
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Fetch files for this task
@@ -110,13 +120,88 @@ export function ViewTaskDialog({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleUploadFile = async (file: File) => {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, 1000);
+  // File upload mutation
+  const uploadFileMutation = useMutation({
+    mutationFn: async ({ files, category }: { files: File[], category: FileCategory }) => {
+      const uploadPromises = files.map(file => 
+        apiRequest('POST', '/api/files', {
+          taskId: task.id,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          fileUrl: `placeholder-url-${file.name}`,
+          category,
+        })
+      );
+      return Promise.all(uploadPromises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/files/${task.id}`] });
+      setUploadingFiles({ DRAFT: [], FINAL: [], FEEDBACK: [] });
+      toast({
+        title: "Files uploaded successfully",
+        description: "Your files have been uploaded to the task",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Categorize files by type
+  const instructionFiles = files.filter(f => f.category === FileCategory.INSTRUCTION);
+  const draftFiles = files.filter(f => f.category === FileCategory.DRAFT);
+  const finalFiles = files.filter(f => f.category === FileCategory.FINAL);
+  const feedbackFiles = files.filter(f => f.category === FileCategory.FEEDBACK);
+
+  // File upload handlers
+  const handleFileUpload = (fileList: FileList | null, category: FileCategory) => {
+    if (!fileList) return;
+    
+    const filesArray = Array.from(fileList);
+    
+    // Validate file sizes
+    const validFiles = filesArray.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
     });
+
+    if (validFiles.length > 0) {
+      uploadFileMutation.mutate({ files: validFiles, category });
+    }
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, category: FileCategory) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFileUpload(e.dataTransfer.files, category);
+  }, []);
+
+  // Check user permissions for file uploads
+  const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
+  const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
+  const canUploadFeedback = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.PROOFREADER);
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     try {
@@ -295,62 +380,202 @@ export function ViewTaskDialog({
               )}
             </TabsContent>
 
-            <TabsContent value="files" className="space-y-4">
+            <TabsContent value="files" className="space-y-6">
               {filesLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                   <p className="text-gray-500">Loading files...</p>
                 </div>
-              ) : files.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Uploaded Files ({files.length})</h4>
-                    <Button variant="outline" size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload More
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {files.map((file) => (
-                      <div
-                        key={file.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="h-10 w-10 bg-white rounded flex items-center justify-center border">
-                          {getFileIcon(file.fileType)}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {file.fileName}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>{formatFileSize(file.fileSize)}</span>
-                            <span>•</span>
-                            <span>{formatDateTime(file.uploadedAt!)}</span>
-                          </div>
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               ) : (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No files uploaded yet</p>
-                  <Button variant="outline" className="mt-4">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload File
-                  </Button>
+                <div className="space-y-6">
+                  {/* Instruction Files Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h4 className="text-sm font-medium">Instruction Files ({instructionFiles.length})</h4>
+                    </div>
+                    {instructionFiles.length > 0 ? (
+                      <div className="space-y-2">
+                        {instructionFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                          >
+                            <div className="h-8 w-8 bg-blue-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.fileType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{file.fileName}</p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
+                              </p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-100">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No instruction files</p>
+                    )}
+                  </div>
+
+                  {/* Draft Files Section - Writers can upload */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-yellow-600" />
+                        <h4 className="text-sm font-medium">Draft Files ({draftFiles.length})</h4>
+                      </div>
+                      {canUploadDrafts && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.DRAFT);
+                            input.click();
+                          }}
+                          disabled={uploadFileMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Upload Draft
+                        </Button>
+                      )}
+                    </div>
+                    {draftFiles.length > 0 ? (
+                      <div className="space-y-2">
+                        {draftFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                          >
+                            <div className="h-8 w-8 bg-yellow-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.fileType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{file.fileName}</p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
+                              </p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-yellow-600 hover:bg-yellow-100">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No draft files uploaded yet</p>
+                    )}
+                  </div>
+
+                  {/* Final Files Section - Writers can upload */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-green-600" />
+                        <h4 className="text-sm font-medium">Final Submission ({finalFiles.length})</h4>
+                      </div>
+                      {canUploadFinal && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.FINAL);
+                            input.click();
+                          }}
+                          disabled={uploadFileMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Upload Final
+                        </Button>
+                      )}
+                    </div>
+                    {finalFiles.length > 0 ? (
+                      <div className="space-y-2">
+                        {finalFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200"
+                          >
+                            <div className="h-8 w-8 bg-green-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.fileType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{file.fileName}</p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
+                              </p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-green-600 hover:bg-green-100">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No final files submitted yet</p>
+                    )}
+                  </div>
+
+                  {/* Feedback Files Section - Proofreaders can upload */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-purple-600" />
+                        <h4 className="text-sm font-medium">Feedback Files ({feedbackFiles.length})</h4>
+                      </div>
+                      {canUploadFeedback && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, FileCategory.FEEDBACK);
+                            input.click();
+                          }}
+                          disabled={uploadFileMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Upload Feedback
+                        </Button>
+                      )}
+                    </div>
+                    {feedbackFiles.length > 0 ? (
+                      <div className="space-y-2">
+                        {feedbackFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200"
+                          >
+                            <div className="h-8 w-8 bg-purple-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.fileType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{file.fileName}</p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
+                              </p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-purple-600 hover:bg-purple-100">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No feedback files uploaded yet</p>
+                    )}
+                  </div>
                 </div>
               )}
             </TabsContent>

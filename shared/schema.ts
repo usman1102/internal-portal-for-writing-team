@@ -62,6 +62,14 @@ export const tasks = pgTable("tasks", {
   budget: doublePrecision("budget"),
 });
 
+// File Categories
+export enum FileCategory {
+  INSTRUCTION = 'INSTRUCTION', // Files uploaded during task creation (instructions)
+  DRAFT = 'DRAFT',            // Draft files uploaded by writers
+  FINAL = 'FINAL',            // Final submission files by writers
+  FEEDBACK = 'FEEDBACK'       // Feedback files from proofreaders
+}
+
 // Files schema
 export const files = pgTable("files", {
   id: serial("id").primaryKey(),
@@ -72,6 +80,7 @@ export const files = pgTable("files", {
   fileType: text("file_type").notNull(),
   fileUrl: text("file_url").notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
+  category: text("category").$type<FileCategory>().notNull().default(FileCategory.INSTRUCTION),
   isSubmission: boolean("is_submission").default(false),
 });
 
