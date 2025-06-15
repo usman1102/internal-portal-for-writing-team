@@ -553,6 +553,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix existing team leads' teamId - temporary endpoint
+  app.post("/api/fix-team-leads", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Only superadmin can run this fix
+      if (req.user?.role !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can run this fix");
+      }
+      
+      const teams = await storage.getAllTeams();
+      const fixes = [];
+      
+      for (const team of teams) {
+        if (team.teamLeadId) {
+          const teamLead = await storage.getUser(team.teamLeadId);
+          if (teamLead && teamLead.teamId !== team.id) {
+            await storage.updateUser(team.teamLeadId, { teamId: team.id });
+            fixes.push(`Updated team lead ${teamLead.username} (ID: ${teamLead.id}) to team ${team.id}`);
+          }
+        }
+      }
+      
+      res.json({ message: "Team leads fixed", fixes });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Teams routes
   app.get("/api/teams", async (req, res, next) => {
     try {
@@ -581,6 +610,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertTeamSchema.parse(req.body);
       const team = await storage.createTeam(validatedData);
+      
+      // Automatically assign the team lead to their team
+      if (validatedData.teamLeadId) {
+        await storage.updateUser(validatedData.teamLeadId, { teamId: team.id });
+      }
+      
       res.status(201).json(team);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -609,6 +644,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedTeam = await storage.updateTeam(teamId, req.body);
       if (!updatedTeam) {
         return res.status(404).send("Team not found");
+      }
+      
+      // If team lead is being changed, update the new team lead's teamId
+      if (req.body.teamLeadId && req.body.teamLeadId !== existingTeam.teamLeadId) {
+        await storage.updateUser(req.body.teamLeadId, { teamId: teamId });
+        
+        // Remove old team lead from team if they exist
+        if (existingTeam.teamLeadId) {
+          await storage.updateUser(existingTeam.teamLeadId, { teamId: null });
+        }
       }
       
       res.json(updatedTeam);

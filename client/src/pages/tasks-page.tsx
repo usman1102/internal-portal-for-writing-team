@@ -66,17 +66,7 @@ export default function TasksPage() {
       const teamMemberIds = users
         .filter(u => u.teamId === user.teamId && u.id !== user.id)
         .map(u => u.id);
-      const teamTasks = tasks.filter(task => teamMemberIds.includes(task.assignedToId!));
-      
-      // Debug logging for team leads
-      console.log('Team Lead Debug:');
-      console.log('User teamId:', user.teamId);
-      console.log('Team members:', users.filter(u => u.teamId === user.teamId && u.id !== user.id));
-      console.log('Team member IDs:', teamMemberIds);
-      console.log('All tasks:', tasks);
-      console.log('Team tasks (assigned to team members):', teamTasks);
-      
-      return teamTasks;
+      return tasks.filter(task => teamMemberIds.includes(task.assignedToId!));
     }
     return [];
   })();
