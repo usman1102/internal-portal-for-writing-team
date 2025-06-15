@@ -62,8 +62,16 @@ export default function TasksPage() {
     : [];
     
   const unassignedTasks = user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER
-    ? tasks.filter(task => task.assignedToId === null)
+    ? tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined)
     : [];
+
+  // Debug logging
+  console.log('All tasks:', tasks);
+  console.log('User ID:', user?.id);
+  console.log('My tasks:', myTasks);
+  console.log('Unassigned tasks:', unassignedTasks);
+  console.log('Tasks with null assignedToId:', tasks.filter(task => task.assignedToId === null));
+  console.log('Tasks with undefined assignedToId:', tasks.filter(task => task.assignedToId === undefined));
 
   return (
     <div className="flex h-screen bg-gray-100">
