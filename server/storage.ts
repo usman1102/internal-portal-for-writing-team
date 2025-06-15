@@ -444,17 +444,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(taskData: InsertTask): Promise<Task> {
+    // Convert string dates to Date objects for Drizzle
+    const processedData = { ...taskData };
+    if (processedData.deadline && typeof processedData.deadline === 'string') {
+      processedData.deadline = new Date(processedData.deadline);
+    }
+    if (processedData.submissionDate && typeof processedData.submissionDate === 'string') {
+      processedData.submissionDate = new Date(processedData.submissionDate);
+    }
+    
     const [task] = await db
       .insert(tasks)
-      .values(taskData as any)
+      .values(processedData as any)
       .returning();
     return task;
   }
 
   async updateTask(id: number, taskData: Partial<Task>): Promise<Task | undefined> {
+    // Convert string dates to Date objects for Drizzle
+    const processedData = { ...taskData };
+    if (processedData.deadline && typeof processedData.deadline === 'string') {
+      processedData.deadline = new Date(processedData.deadline);
+    }
+    if (processedData.submissionDate && typeof processedData.submissionDate === 'string') {
+      processedData.submissionDate = new Date(processedData.submissionDate);
+    }
+    
     const [task] = await db
       .update(tasks)
-      .set(taskData)
+      .set(processedData)
       .where(eq(tasks.id, id))
       .returning();
     return task || undefined;
