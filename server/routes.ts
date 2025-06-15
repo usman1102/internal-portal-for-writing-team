@@ -191,10 +191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userRole = req.user?.role;
       
-      // Writers only see tasks assigned to them
+      // Writers see tasks assigned to them AND unassigned tasks
       if (userRole === UserRole.WRITER) {
-        const tasks = await storage.getTasksByAssignee(req.user.id);
-        return res.json(tasks);
+        const allTasks = await storage.getAllTasks();
+        const writerTasks = allTasks.filter(task => 
+          task.assignedToId === req.user.id || task.assignedToId === null
+        );
+        return res.json(writerTasks);
       }
       
       // Sales users only see tasks they created
@@ -204,7 +207,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(salesTasks);
       }
       
-      // Superadmin, Team Leads, and Proofreaders see all tasks
+      // Proofreaders see tasks assigned to them AND unassigned tasks
+      if (userRole === UserRole.PROOFREADER) {
+        const allTasks = await storage.getAllTasks();
+        const proofreaderTasks = allTasks.filter(task => 
+          task.assignedToId === req.user.id || task.assignedToId === null
+        );
+        return res.json(proofreaderTasks);
+      }
+      
+      // Superadmin and Team Leads see all tasks
       const tasks = await storage.getAllTasks();
       res.json(tasks);
     } catch (error) {
