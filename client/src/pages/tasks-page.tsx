@@ -81,7 +81,7 @@ export default function TasksPage() {
       const teamMemberIds = users
         .filter(u => u.teamId === user.teamId && u.id !== user.id)
         .map(u => u.id);
-      return tasks.filter(task => teamMemberIds.includes(task.assignedToId!));
+      return tasks.filter(task => task.assignedToId !== null && teamMemberIds.includes(task.assignedToId));
     }
     return [];
   })();
