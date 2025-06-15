@@ -205,6 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const allTasks = await storage.getAllTasks();
         // Sales see all tasks they created, regardless of assignment status
         const salesTasks = allTasks.filter(task => task.assignedById === req.user.id);
+        console.log(`Sales user ${req.user.username} tasks:`, 
+          salesTasks.map(t => `Task ${t.id}: "${t.title}" assigned to ${t.assignedToId || 'unassigned'}`));
         return res.json(salesTasks);
       }
       
@@ -228,10 +230,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         const teamMemberIds = teamMembers.map(member => member.id);
         
+        console.log(`Team Lead ${req.user.username} (teamId: ${req.user.teamId})`);
+        console.log('Team members:', teamMembers.map(m => `${m.username} (id: ${m.id})`));
+        console.log('Team member IDs:', teamMemberIds);
+        
         const teamLeadTasks = allTasks.filter(task => 
           task.assignedToId === null || // Unassigned tasks
           teamMemberIds.includes(task.assignedToId!) // Tasks assigned to team members
         );
+        
+        console.log('Filtered tasks for team lead:', teamLeadTasks.map(t => `Task ${t.id} assigned to ${t.assignedToId}`));
         return res.json(teamLeadTasks);
       }
       
