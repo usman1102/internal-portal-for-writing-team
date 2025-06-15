@@ -35,8 +35,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           teamId: user.teamId
         }));
         res.json(filteredUsers);
+      } else if (req.user?.role === UserRole.SALES) {
+        // Sales users can see basic info of users to display task assignments
+        // but hide sensitive data like passwords
+        const filteredUsers = users.map(user => ({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          status: user.status,
+          teamId: user.teamId
+        }));
+        res.json(filteredUsers);
       } else {
-        // Sales users don't need to see other users
+        // Other roles don't need to see users
         return res.status(403).send("Unauthorized to view users");
       }
     } catch (error) {
