@@ -73,6 +73,16 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
     }
   });
+
+  // Delete task mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest('DELETE', `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    }
+  });
   
   // Calculate dashboard statistics
   const activeTasksCount = tasks.filter(task => 

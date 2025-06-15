@@ -52,13 +52,42 @@ export function TaskTable({
   isLoading = false,
   onTaskCreate,
   onTaskUpdate,
+  onTaskDelete,
   canCreateTasks = false,
   title = "Tasks",
 }: TaskTableProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Delete task mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest('DELETE', `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Task deleted",
+        description: "Task has been deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Check if user can delete tasks
+  const canDeleteTasks = user?.role === UserRole.SUPERADMIN || 
+                        user?.role === UserRole.TEAM_LEAD || 
+                        user?.role === UserRole.SALES;
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   const ITEMS_PER_PAGE = 5;
@@ -114,8 +143,8 @@ export function TaskTable({
               <SelectItem value="ALL">All Status</SelectItem>
               <SelectItem value={TaskStatus.NEW}>New</SelectItem>
               <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
-              <SelectItem value={TaskStatus.REVIEW}>Review</SelectItem>
-              <SelectItem value={TaskStatus.REVISION}>Revision</SelectItem>
+              <SelectItem value={TaskStatus.UNDER_REVIEW}>Under Review</SelectItem>
+              <SelectItem value={TaskStatus.SUBMITTED}>Submitted</SelectItem>
               <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
             </SelectContent>
           </Select>
@@ -144,6 +173,9 @@ export function TaskTable({
               </TableHead>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Assigned To
+              </TableHead>
+              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Word Count
               </TableHead>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Deadline
@@ -234,6 +266,11 @@ export function TaskTable({
                       )}
                     </TableCell>
                     <TableCell>
+                      <div className="text-sm text-gray-900">
+                        {task.wordCount ? `${task.wordCount.toLocaleString()} words` : 'Not specified'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {task.deadline ? (
                         <>
                           <div className="text-sm text-gray-900">
@@ -280,6 +317,17 @@ export function TaskTable({
                             onClick={() => handleEditTask(task)}
                           >
                             Edit
+                          </Button>
+                        )}
+                        {canDeleteTasks && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-800"
+                            onClick={() => deleteTaskMutation.mutate(task.id)}
+                            disabled={deleteTaskMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
