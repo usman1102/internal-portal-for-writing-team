@@ -381,6 +381,17 @@ export function TaskTable({
           users={users}
         />
       )}
+      
+      {/* Edit Task Dialog */}
+      {editingTask && (
+        <EditTaskDialog
+          task={editingTask}
+          users={users}
+          isOpen={!!editingTask}
+          onClose={() => setEditingTask(null)}
+          onUpdateTask={onTaskUpdate}
+        />
+      )}
     </div>
   );
 }

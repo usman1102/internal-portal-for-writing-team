@@ -155,7 +155,7 @@ export class MemStorage implements IStorage {
 
   private async migrateExistingPasswords() {
     // Check if any users have plaintext passwords and hash them
-    for (const user of this.usersData.values()) {
+    for (const user of Array.from(this.usersData.values())) {
       // Check if password is plaintext (doesn't contain a dot separator)
       if (!user.password.includes('.')) {
         const hashedPassword = await this.hashPassword(user.password);
