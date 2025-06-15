@@ -81,7 +81,7 @@ export function ViewTaskDialog({
 
   // Fetch files for this task
   const { data: files = [], isLoading: filesLoading } = useQuery<File[]>({
-    queryKey: ['/api/files', task.id],
+    queryKey: [`/api/files/${task.id}`],
     enabled: isOpen && !!task.id,
   });
 
