@@ -114,13 +114,15 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           
 
           
-          <SidebarLink 
-            href="/team" 
-            icon={<Users size={18} />} 
-            active={location === '/team'}
-          >
-            Team
-          </SidebarLink>
+          {(user.role === UserRole.SUPERADMIN || user.role === UserRole.TEAM_LEAD) && (
+            <SidebarLink 
+              href="/team" 
+              icon={<Users size={18} />} 
+              active={location === '/team'}
+            >
+              Team
+            </SidebarLink>
+          )}
 
 
         </nav>

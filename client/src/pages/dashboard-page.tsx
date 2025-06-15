@@ -193,12 +193,14 @@ export default function DashboardPage() {
               canCreateTasks={canCreateTasks}
             />
             
-            {/* Team Members */}
-            <TeamMembers 
-              members={filteredUsers}
-              isLoading={isLoadingUsers}
-              onUpdateStatus={handleUpdateUserStatus}
-            />
+            {/* Team Members - Only show for Superadmin and Team Leads */}
+            {(user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD) && (
+              <TeamMembers 
+                members={filteredUsers}
+                isLoading={isLoadingUsers}
+                onUpdateStatus={handleUpdateUserStatus}
+              />
+            )}
             
             {/* Recent Activity */}
             <RecentActivity 
