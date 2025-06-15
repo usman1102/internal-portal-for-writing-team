@@ -491,6 +491,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the task exists and the user has permission to delete files
+      if (!file.taskId) {
+        return res.status(400).send("Invalid task ID in file record");
+      }
+      
       const task = await storage.getTask(file.taskId);
       
       if (!task) {

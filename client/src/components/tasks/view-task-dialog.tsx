@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -79,6 +80,27 @@ export function ViewTaskDialog({
   users,
 }: ViewTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // File deletion mutation
+  const deleteFileMutation = useMutation({
+    mutationFn: async (fileId: number) => {
+      await apiRequest('DELETE', `/api/files/${fileId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/files/${task.id}`] });
+      toast({
+        title: "File deleted",
+        description: "File has been removed successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const [activeTab, setActiveTab] = useState("details");
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: File[] }>({
@@ -88,6 +110,7 @@ export function ViewTaskDialog({
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch files for this task
   const { data: files = [], isLoading: filesLoading } = useQuery<TaskFile[]>({
