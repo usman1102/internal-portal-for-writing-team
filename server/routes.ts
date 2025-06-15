@@ -535,23 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analytics routes
-  app.get("/api/analytics", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      // Only team leads and sales can access analytics
-      if (req.user?.role !== 'TEAM_LEAD' && req.user?.role !== 'SALES') {
-        return res.status(403).send("Unauthorized to access analytics");
-      }
-      
-      const period = req.query.period as string || '7days';
-      const analytics = await storage.getAnalytics(period);
-      res.json(analytics);
-    } catch (error) {
-      next(error);
-    }
-  });
+
 
   // Fix existing team leads' teamId - temporary endpoint
   app.post("/api/fix-team-leads", async (req, res, next) => {

@@ -4,7 +4,6 @@ import {
   files, 
   comments, 
   activities, 
-  analytics,
   teams,
   type User, 
   type InsertUser,
@@ -16,8 +15,6 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
-  type Analytics,
-  type InsertAnalytics,
   type Team,
   type InsertTeam,
   UserRole,
@@ -66,9 +63,7 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 
-  // Analytics methods
-  getAnalytics(period: string): Promise<Analytics[]>;
-  createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
+
 
   // Team methods
   getTeam(id: number): Promise<Team | undefined>;
@@ -89,7 +84,7 @@ export class MemStorage implements IStorage {
   private filesData: Map<number, File>;
   private commentsData: Map<number, Comment>;
   private activitiesData: Map<number, Activity>;
-  private analyticsData: Map<number, Analytics>;
+
   private teamsData: Map<number, Team>;
   sessionStore: session.Store;
   
@@ -98,7 +93,7 @@ export class MemStorage implements IStorage {
   private fileIdCounter: number;
   private commentIdCounter: number;
   private activityIdCounter: number;
-  private analyticsIdCounter: number;
+
   private teamIdCounter: number;
 
   constructor() {
@@ -107,7 +102,7 @@ export class MemStorage implements IStorage {
     this.filesData = new Map();
     this.commentsData = new Map();
     this.activitiesData = new Map();
-    this.analyticsData = new Map();
+
     this.teamsData = new Map();
     
     this.userIdCounter = 1;
@@ -115,7 +110,7 @@ export class MemStorage implements IStorage {
     this.fileIdCounter = 1;
     this.commentIdCounter = 1;
     this.activityIdCounter = 1;
-    this.analyticsIdCounter = 1;
+
     this.teamIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
@@ -322,23 +317,7 @@ export class MemStorage implements IStorage {
     return activity;
   }
 
-  // Analytics methods
-  async getAnalytics(period: string): Promise<Analytics[]> {
-    return Array.from(this.analyticsData.values())
-      .filter(analytics => analytics.period === period);
-  }
 
-  async createAnalytics(analyticsData: InsertAnalytics): Promise<Analytics> {
-    const id = this.analyticsIdCounter++;
-    const now = new Date();
-    const analytics = { 
-      ...analyticsData, 
-      id, 
-      createdAt: now
-    } as Analytics;
-    this.analyticsData.set(id, analytics);
-    return analytics;
-  }
 
   // Team methods
   async getTeam(id: number): Promise<Team | undefined> {
