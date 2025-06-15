@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User } from "@shared/schema";
 import { cn, getInitials, getStatusColor } from "@/lib/utils";
@@ -8,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserProfileDialog } from "@/components/user/user-profile-dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TeamMembersProps {
   members: User[];

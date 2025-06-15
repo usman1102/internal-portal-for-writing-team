@@ -46,6 +46,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   if (!user) return null;
 
@@ -76,7 +77,10 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         </div>
 
         <div className="p-2">
-          <div className="p-2 mb-2 flex items-center">
+          <div 
+            className="p-2 mb-2 flex items-center cursor-pointer hover:bg-gray-100 rounded-md transition-colors"
+            onClick={() => setShowUserProfile(true)}
+          >
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
               <span>{getInitials(user.fullName)}</span>
             </div>
@@ -135,6 +139,15 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             )}
           </Button>
         </div>
+
+        {user && (
+          <UserProfileDialog
+            user={user}
+            isOpen={showUserProfile}
+            onClose={() => setShowUserProfile(false)}
+            isOwnProfile={true}
+          />
+        )}
       </div>
     </>
   );
