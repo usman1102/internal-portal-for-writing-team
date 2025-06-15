@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { User } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/hooks/use-theme";
 import {
   Dialog,
   DialogContent,
@@ -75,8 +76,16 @@ const themes = [
 
 export function UserProfileDialog({ user, isOpen, onClose, isOwnProfile = false }: UserProfileDialogProps) {
   const [activeTab, setActiveTab] = useState("profile");
-  const [selectedTheme, setSelectedTheme] = useState("light");
+  const { theme, setTheme } = useTheme();
+  const [selectedTheme, setSelectedTheme] = useState(user.theme || "light");
   const { toast } = useToast();
+
+  // Sync selected theme with user's theme
+  useEffect(() => {
+    if (user.theme) {
+      setSelectedTheme(user.theme);
+    }
+  }, [user.theme]);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -135,9 +144,10 @@ export function UserProfileDialog({ user, isOpen, onClose, isOwnProfile = false 
     updateProfileMutation.mutate(data);
   };
 
-  const handleThemeChange = (theme: string) => {
-    setSelectedTheme(theme);
-    updateThemeMutation.mutate(theme);
+  const handleThemeChange = (newTheme: string) => {
+    setSelectedTheme(newTheme);
+    setTheme(newTheme as any); // Apply theme immediately
+    updateThemeMutation.mutate(newTheme);
   };
 
   const getProfileCompleteness = () => {
