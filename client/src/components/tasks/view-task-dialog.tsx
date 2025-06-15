@@ -242,6 +242,8 @@ export function ViewTaskDialog({
       setIsSubmitting(true);
       if (onUpdateTask) {
         await onUpdateTask(task.id, { status: newStatus });
+        // Force refresh all task queries to ensure consistency across all views
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       }
       toast({
         title: "Status updated",
@@ -268,6 +270,8 @@ export function ViewTaskDialog({
           deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
         };
         await onUpdateTask(task.id, updateData);
+        // Force refresh all task queries to ensure consistency across all views
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       }
 
       toast({

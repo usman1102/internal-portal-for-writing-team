@@ -223,24 +223,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userRole === UserRole.TEAM_LEAD) {
         const allTasks = await storage.getAllTasks();
         const allUsers = await storage.getAllUsers();
+        const allTeams = await storage.getAllTeams();
         
-        // Get team members (users with same teamId as team lead)
-        const teamMembers = allUsers.filter(user => 
-          user.teamId === req.user.teamId && user.id !== req.user.id
-        );
-        const teamMemberIds = teamMembers.map(member => member.id);
+        // Find the team where this user is the team lead
+        const teamLedByUser = allTeams.find(team => team.teamLeadId === req.user.id);
         
-        console.log(`Team Lead ${req.user.username} (teamId: ${req.user.teamId})`);
-        console.log('Team members:', teamMembers.map(m => `${m.username} (id: ${m.id})`));
-        console.log('Team member IDs:', teamMemberIds);
-        
-        const teamLeadTasks = allTasks.filter(task => 
-          task.assignedToId === null || // Unassigned tasks
-          teamMemberIds.includes(task.assignedToId!) // Tasks assigned to team members
-        );
-        
-        console.log('Filtered tasks for team lead:', teamLeadTasks.map(t => `Task ${t.id} assigned to ${t.assignedToId}`));
-        return res.json(teamLeadTasks);
+        if (teamLedByUser) {
+          // Get team members (users with the same teamId as the team led by this user)
+          const teamMembers = allUsers.filter(user => 
+            user.teamId === teamLedByUser.id && user.id !== req.user.id
+          );
+          const teamMemberIds = teamMembers.map(member => member.id);
+          
+          console.log(`Team Lead ${req.user.username} leads team ${teamLedByUser.name} (id: ${teamLedByUser.id})`);
+          console.log('Team members:', teamMembers.map(m => `${m.username} (id: ${m.id})`));
+          console.log('Team member IDs:', teamMemberIds);
+          
+          const teamLeadTasks = allTasks.filter(task => 
+            task.assignedToId === null || // Unassigned tasks
+            teamMemberIds.includes(task.assignedToId!) // Tasks assigned to team members
+          );
+          
+          console.log('Filtered tasks for team lead:', teamLeadTasks.map(t => `Task ${t.id} assigned to ${t.assignedToId}`));
+          return res.json(teamLeadTasks);
+        } else {
+          // If no team found, just return unassigned tasks
+          const unassignedTasks = allTasks.filter(task => task.assignedToId === null);
+          console.log(`Team Lead ${req.user.username} has no team, showing unassigned tasks only`);
+          return res.json(unassignedTasks);
+        }
       }
       
       // Superadmin sees all tasks
