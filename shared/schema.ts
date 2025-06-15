@@ -90,15 +90,7 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Analytics schema
-export const analytics = pgTable("analytics", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
 
-  data: jsonb("data"),
-  period: text("period").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 // Schema validation with Zod
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
@@ -127,9 +119,7 @@ export const insertActivitySchema = createInsertSchema(activities).omit({ id: tr
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 
-export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
-export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
-export type Analytics = typeof analytics.$inferSelect;
+
 
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
 export type InsertTeam = z.infer<typeof insertTeamSchema>;

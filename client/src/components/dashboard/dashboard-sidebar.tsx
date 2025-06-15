@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   ClipboardList,
   Folder,
-  BarChart,
   Users
 } from "lucide-react";
 
@@ -107,13 +106,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           
 
           
-          <SidebarLink 
-            href="/analytics" 
-            icon={<BarChart size={18} />} 
-            active={location === '/analytics'}
-          >
-            Analytics
-          </SidebarLink>
+
           
           <SidebarLink 
             href="/team" 

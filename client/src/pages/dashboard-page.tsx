@@ -8,7 +8,7 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { TaskTable } from "@/components/dashboard/task-table";
 import { TeamMembers } from "@/components/dashboard/team-members";
-import { ProjectAnalytics } from "@/components/dashboard/project-analytics";
+
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import {
   ClipboardList,
@@ -116,17 +116,7 @@ export default function DashboardPage() {
     return submissionDate >= oneWeekAgo;
   }).length;
   
-  // Mock analytics data (would be fetched from API in a real app)
-  const analyticsData = [
-    { name: "Blog", completed: 15, inProgress: 5, revision: 2 },
-    { name: "Social", completed: 8, inProgress: 3, revision: 1 },
-    { name: "Email", completed: 10, inProgress: 2, revision: 0 },
-    { name: "SEO", completed: 12, inProgress: 7, revision: 3 },
-    { name: "Product", completed: 6, inProgress: 4, revision: 1 }
-  ];
-  
-  const turnAroundTime = { value: 2.3, change: 8 };
-  const revisionRate = { value: 15, change: -3 };
+
   
   // Determine if the current user can create tasks
   const canCreateTasks = user?.role === UserRole.SALES || user?.role === UserRole.TEAM_LEAD;
@@ -203,23 +193,12 @@ export default function DashboardPage() {
               canCreateTasks={canCreateTasks}
             />
             
-            {/* Team Members and Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <TeamMembers 
-                members={filteredUsers}
-                isLoading={isLoadingUsers}
-                onUpdateStatus={handleUpdateUserStatus}
-              />
-              
-              <div className="lg:col-span-2">
-                <ProjectAnalytics 
-                  data={analyticsData}
-                  turnAroundTime={turnAroundTime}
-                  revisionRate={revisionRate}
-                  isLoading={false}
-                />
-              </div>
-            </div>
+            {/* Team Members */}
+            <TeamMembers 
+              members={filteredUsers}
+              isLoading={isLoadingUsers}
+              onUpdateStatus={handleUpdateUserStatus}
+            />
             
             {/* Recent Activity */}
             <RecentActivity 
