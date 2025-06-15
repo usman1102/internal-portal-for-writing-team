@@ -59,7 +59,12 @@ export default function DashboardPage() {
       return res.json();
     },
     onSuccess: () => {
+      // Force refresh all related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      // Also clear any cached task data to force complete refresh
+      queryClient.removeQueries({ queryKey: ["/api/tasks"] });
     }
   });
   

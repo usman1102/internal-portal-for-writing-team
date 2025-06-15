@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Task, User, UserRole } from "@shared/schema";
+import { Task, User, UserRole, Team } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
@@ -71,17 +71,26 @@ export default function TasksPage() {
     return deleteTaskMutation.mutateAsync(id);
   };
 
+  // Fetch teams to get proper team structure
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
   // Filter tasks for writers and team leads
   const myTasks = (() => {
     if (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER) {
       return tasks.filter(task => task.assignedToId === user?.id);
     }
     if (user?.role === UserRole.TEAM_LEAD) {
-      // For team leads, "my tasks" are tasks assigned to their team members
-      const teamMemberIds = users
-        .filter(u => u.teamId === user.teamId && u.id !== user.id)
-        .map(u => u.id);
-      return tasks.filter(task => task.assignedToId !== null && teamMemberIds.includes(task.assignedToId));
+      // Find the team where this user is the team lead
+      const teamLedByUser = teams.find(team => team.teamLeadId === user.id);
+      if (teamLedByUser) {
+        // Get team members (users with the same teamId as the team led by this user)
+        const teamMemberIds = users
+          .filter(u => u.teamId === teamLedByUser.id && u.id !== user.id)
+          .map(u => u.id);
+        return tasks.filter(task => task.assignedToId !== null && teamMemberIds.includes(task.assignedToId));
+      }
     }
     return [];
   })();
