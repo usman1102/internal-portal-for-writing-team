@@ -16,9 +16,9 @@ export enum UserRole {
 export enum TaskStatus {
   NEW = 'NEW',
   IN_PROGRESS = 'IN_PROGRESS',
-  REVIEW = 'REVIEW',
-  REVISION = 'REVISION',
-  COMPLETED = 'COMPLETED'
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  COMPLETED = 'COMPLETED',
+  SUBMITTED = 'SUBMITTED'
 }
 
 // Users schema
