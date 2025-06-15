@@ -499,7 +499,7 @@ export class DatabaseStorage implements IStorage {
   async createComment(commentData: InsertComment): Promise<Comment> {
     const [comment] = await db
       .insert(comments)
-      .values(commentData)
+      .values(commentData as any)
       .returning();
     return comment;
   }
@@ -517,7 +517,7 @@ export class DatabaseStorage implements IStorage {
   async createActivity(activityData: InsertActivity): Promise<Activity> {
     const [activity] = await db
       .insert(activities)
-      .values(activityData)
+      .values(activityData as any)
       .returning();
     return activity;
   }
@@ -539,7 +539,7 @@ export class DatabaseStorage implements IStorage {
   async createTeam(teamData: InsertTeam): Promise<Team> {
     const [team] = await db
       .insert(teams)
-      .values(teamData)
+      .values(teamData as any)
       .returning();
     return team;
   }

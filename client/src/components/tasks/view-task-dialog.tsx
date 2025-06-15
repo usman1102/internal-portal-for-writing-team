@@ -464,7 +464,12 @@ export function ViewTaskDialog({
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-100">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-blue-600 hover:bg-blue-100"
+                                onClick={() => window.open(file.fileUrl, '_blank')}
+                              >
                                 <Download className="h-4 w-4" />
                               </Button>
                               {canManageFiles && (
@@ -529,7 +534,12 @@ export function ViewTaskDialog({
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm" className="text-yellow-600 hover:bg-yellow-100">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-yellow-600 hover:bg-yellow-100"
+                                onClick={() => window.open(file.fileUrl, '_blank')}
+                              >
                                 <Download className="h-4 w-4" />
                               </Button>
                               {canManageFiles && (
@@ -594,7 +604,12 @@ export function ViewTaskDialog({
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm" className="text-green-600 hover:bg-green-100">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-green-600 hover:bg-green-100"
+                                onClick={() => window.open(file.fileUrl, '_blank')}
+                              >
                                 <Download className="h-4 w-4" />
                               </Button>
                               {canManageFiles && (
@@ -659,7 +674,12 @@ export function ViewTaskDialog({
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm" className="text-purple-600 hover:bg-purple-100">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-purple-600 hover:bg-purple-100"
+                                onClick={() => window.open(file.fileUrl, '_blank')}
+                              >
                                 <Download className="h-4 w-4" />
                               </Button>
                               {canManageFiles && (
