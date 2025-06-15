@@ -216,7 +216,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(proofreaderTasks);
       }
       
-      // Superadmin and Team Leads see all tasks
+      // Team Leads see unassigned tasks AND tasks assigned to their team members
+      if (userRole === UserRole.TEAM_LEAD) {
+        const allTasks = await storage.getAllTasks();
+        const allUsers = await storage.getAllUsers();
+        
+        // Get team members (users with same teamId as team lead)
+        const teamMembers = allUsers.filter(user => 
+          user.teamId === req.user.teamId && user.id !== req.user.id
+        );
+        const teamMemberIds = teamMembers.map(member => member.id);
+        
+        const teamLeadTasks = allTasks.filter(task => 
+          task.assignedToId === null || // Unassigned tasks
+          teamMemberIds.includes(task.assignedToId!) // Tasks assigned to team members
+        );
+        return res.json(teamLeadTasks);
+      }
+      
+      // Superadmin sees all tasks
       const tasks = await storage.getAllTasks();
       res.json(tasks);
     } catch (error) {

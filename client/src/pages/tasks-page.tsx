@@ -56,14 +56,27 @@ export default function TasksPage() {
     return updateTaskMutation.mutateAsync({ id, data });
   };
 
-  // Filter tasks for writers
-  const myTasks = user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER 
-    ? tasks.filter(task => task.assignedToId === user?.id)
-    : [];
+  // Filter tasks for writers and team leads
+  const myTasks = (() => {
+    if (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER) {
+      return tasks.filter(task => task.assignedToId === user?.id);
+    }
+    if (user?.role === UserRole.TEAM_LEAD) {
+      // For team leads, "my tasks" are tasks assigned to their team members
+      const teamMemberIds = users
+        .filter(u => u.teamId === user.teamId && u.id !== user.id)
+        .map(u => u.id);
+      return tasks.filter(task => teamMemberIds.includes(task.assignedToId!));
+    }
+    return [];
+  })();
     
-  const unassignedTasks = user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER
-    ? tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined)
-    : [];
+  const unassignedTasks = (() => {
+    if (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER || user?.role === UserRole.TEAM_LEAD) {
+      return tasks.filter(task => task.assignedToId === null || task.assignedToId === undefined);
+    }
+    return [];
+  })();
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -81,7 +94,7 @@ export default function TasksPage() {
         
         <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
           <div className="space-y-6">
-            {(user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER) ? (
+            {(user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER || user?.role === UserRole.TEAM_LEAD) ? (
               <>
                 {/* My Assigned Tasks Table */}
                 <TaskTable 
@@ -90,8 +103,8 @@ export default function TasksPage() {
                   isLoading={isLoadingTasks || isLoadingUsers}
                   onTaskCreate={handleCreateTask}
                   onTaskUpdate={handleUpdateTask}
-                  canCreateTasks={false}
-                  title="My Assigned Tasks"
+                  canCreateTasks={user?.role === UserRole.TEAM_LEAD}
+                  title={user?.role === UserRole.TEAM_LEAD ? "Team Assigned Tasks" : "My Assigned Tasks"}
                 />
                 
                 {/* Unassigned Tasks Table */}
@@ -101,7 +114,7 @@ export default function TasksPage() {
                   isLoading={isLoadingTasks || isLoadingUsers}
                   onTaskCreate={handleCreateTask}
                   onTaskUpdate={handleUpdateTask}
-                  canCreateTasks={false}
+                  canCreateTasks={user?.role === UserRole.TEAM_LEAD}
                   title="Available Tasks"
                 />
               </>
