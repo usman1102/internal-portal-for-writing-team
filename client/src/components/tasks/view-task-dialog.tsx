@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Task, TaskStatus, User, UserRole } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { Task, TaskStatus, User, UserRole, File } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +40,10 @@ import {
   FileText, 
   Upload,
   Clock,
-  Hash
+  Hash,
+  Download,
+  Image,
+  File as FileIcon
 } from "lucide-react";
 import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +79,12 @@ export function ViewTaskDialog({
   const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
 
+  // Fetch files for this task
+  const { data: files = [], isLoading: filesLoading } = useQuery<File[]>({
+    queryKey: ['/api/files', task.id],
+    enabled: isOpen && !!task.id,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -85,6 +95,20 @@ export function ViewTaskDialog({
       assignedToId: task.assignedToId,
     },
   });
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
+    if (fileType.includes('text') || fileType.includes('document')) return <FileText className="h-4 w-4" />;
+    return <FileIcon className="h-4 w-4" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const handleUploadFile = async (file: File) => {
     return new Promise<void>((resolve) => {
@@ -272,14 +296,63 @@ export function ViewTaskDialog({
             </TabsContent>
 
             <TabsContent value="files" className="space-y-4">
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No files uploaded yet</p>
-                <Button variant="outline" className="mt-4">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload File
-                </Button>
-              </div>
+              {filesLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading files...</p>
+                </div>
+              ) : files.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Uploaded Files ({files.length})</h4>
+                    <Button variant="outline" size="sm">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload More
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {files.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="h-10 w-10 bg-white rounded flex items-center justify-center border">
+                          {getFileIcon(file.fileType)}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {file.fileName}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>{formatFileSize(file.fileSize)}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(file.uploadedAt!)}</span>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No files uploaded yet</p>
+                  <Button variant="outline" className="mt-4">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload File
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4">

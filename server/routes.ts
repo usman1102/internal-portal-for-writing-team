@@ -255,13 +255,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized to create tasks");
       }
       
+      // Extract files array from request body
+      const { files, ...taskData } = req.body;
+      
       // Validate request body
       const validatedData = insertTaskSchema.parse({
-        ...req.body,
+        ...taskData,
         assignedById: req.user.id
       });
       
       const task = await storage.createTask(validatedData);
+      
+      // Handle file uploads if any files were attached
+      if (files && Array.isArray(files) && files.length > 0) {
+        for (const fileInfo of files) {
+          try {
+            // Create file record in database
+            await storage.createFile({
+              taskId: task.id,
+              uploadedById: req.user.id,
+              fileName: fileInfo.name,
+              fileSize: fileInfo.size,
+              fileType: fileInfo.type,
+              fileUrl: `placeholder-url-${fileInfo.name}`, // In a real app, this would be the actual file URL after upload to storage
+              isSubmission: false
+            });
+          } catch (fileError) {
+            console.error('Error saving file info:', fileError);
+            // Continue with other files even if one fails
+          }
+        }
+      }
       
       // Create activity entry for task creation
       await storage.createActivity({
