@@ -103,7 +103,7 @@ export default function DashboardPage() {
   ).length;
   
   const pendingReviewsCount = tasks.filter(task => 
-    task.status === 'REVIEW'
+    task.status === 'UNDER_REVIEW'
   ).length;
   
   const completedThisWeekCount = tasks.filter(task => {

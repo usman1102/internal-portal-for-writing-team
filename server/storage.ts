@@ -47,6 +47,7 @@ export interface IStorage {
   getTasksByAssignee(userId: number): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, taskData: Partial<Task>): Promise<Task | undefined>;
+  deleteTask(id: number): Promise<void>;
 
   // File methods
   getFile(id: number): Promise<File | undefined>;
@@ -245,6 +246,10 @@ export class MemStorage implements IStorage {
     const updatedTask = { ...task, ...taskData };
     this.tasksData.set(id, updatedTask);
     return updatedTask;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    this.tasksData.delete(id);
   }
 
   // File methods

@@ -28,7 +28,12 @@ import { cn, formatDate, getDaysRemaining, getInitials, getStatusColor } from "@
 import { CreateTaskDialog } from "../tasks/create-task-dialog";
 import { ViewTaskDialog } from "../tasks/view-task-dialog";
 import { EditTaskDialog } from "../tasks/edit-task-dialog";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@shared/schema";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -36,6 +41,7 @@ interface TaskTableProps {
   isLoading?: boolean;
   onTaskCreate?: (data: any) => void;
   onTaskUpdate?: (id: number, data: any) => void;
+  onTaskDelete?: (id: number) => void;
   canCreateTasks?: boolean;
   title?: string;
 }

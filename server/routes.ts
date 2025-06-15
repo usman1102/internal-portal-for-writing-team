@@ -200,9 +200,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(writerTasks);
       }
       
-      // Sales users only see tasks they created
+      // Sales users see tasks they created AND tasks assigned to writers in their organization
       if (userRole === UserRole.SALES) {
         const allTasks = await storage.getAllTasks();
+        // Sales see all tasks they created, regardless of assignment status
         const salesTasks = allTasks.filter(task => task.assignedById === req.user.id);
         return res.json(salesTasks);
       }
@@ -399,6 +400,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedTask);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Delete task route
+  app.delete("/api/tasks/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const taskId = parseInt(req.params.id);
+      
+      if (isNaN(taskId)) {
+        return res.status(400).send("Invalid task ID");
+      }
+      
+      // Get the task to check permissions
+      const task = await storage.getTask(taskId);
+      
+      if (!task) {
+        return res.status(404).send("Task not found");
+      }
+      
+      const userRole = req.user?.role;
+      const isTaskCreator = task.assignedById === req.user?.id;
+      const isSuperadmin = userRole === UserRole.SUPERADMIN;
+      const isTeamLead = userRole === UserRole.TEAM_LEAD;
+      const isSales = userRole === UserRole.SALES;
+      
+      // Permission check: superadmin, team leads, or sales who created the task
+      const canDeleteTask = isSuperadmin || isTeamLead || (isSales && isTaskCreator);
+      
+      if (!canDeleteTask) {
+        return res.status(403).send("Unauthorized to delete this task");
+      }
+      
+      await storage.deleteTask(taskId);
+      res.status(200).send("Task deleted successfully");
     } catch (error) {
       next(error);
     }
