@@ -73,8 +73,8 @@ export enum FileCategory {
 // Files schema
 export const files = pgTable("files", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id),
-  uploadedById: integer("uploaded_by_id").references(() => users.id),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  uploadedById: integer("uploaded_by_id").references(() => users.id).notNull(),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
