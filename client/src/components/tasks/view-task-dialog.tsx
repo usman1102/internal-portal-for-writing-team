@@ -146,16 +146,30 @@ export function ViewTaskDialog({
   // File upload mutation
   const uploadFileMutation = useMutation({
     mutationFn: async ({ files, category }: { files: File[], category: FileCategory }) => {
-      const uploadPromises = files.map(file => 
-        apiRequest('POST', '/api/files', {
+      const uploadPromises = files.map(async (file) => {
+        // Convert file to base64
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove the data URL prefix to get just the base64 content
+            const base64Content = result.split(',')[1];
+            resolve(base64Content);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        return apiRequest('POST', '/api/files', {
           taskId: task.id,
+          uploadedById: task.assignedToId || 1, // This will be set by the server based on authenticated user
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
-          fileUrl: `placeholder-url-${file.name}`,
+          fileContent,
           category,
-        })
-      );
+        });
+      });
       return Promise.all(uploadPromises);
     },
     onSuccess: () => {
@@ -472,7 +486,14 @@ export function ViewTaskDialog({
                                 variant="ghost" 
                                 size="sm" 
                                 className="text-blue-600 hover:bg-blue-100"
-                                onClick={() => window.open(file.fileUrl, '_blank')}
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `/api/files/download/${file.id}`;
+                                  link.download = file.fileName;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -542,7 +563,14 @@ export function ViewTaskDialog({
                                 variant="ghost" 
                                 size="sm" 
                                 className="text-yellow-600 hover:bg-yellow-100"
-                                onClick={() => window.open(file.fileUrl, '_blank')}
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `/api/files/download/${file.id}`;
+                                  link.download = file.fileName;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -612,7 +640,14 @@ export function ViewTaskDialog({
                                 variant="ghost" 
                                 size="sm" 
                                 className="text-green-600 hover:bg-green-100"
-                                onClick={() => window.open(file.fileUrl, '_blank')}
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `/api/files/download/${file.id}`;
+                                  link.download = file.fileName;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -682,7 +717,14 @@ export function ViewTaskDialog({
                                 variant="ghost" 
                                 size="sm" 
                                 className="text-purple-600 hover:bg-purple-100"
-                                onClick={() => window.open(file.fileUrl, '_blank')}
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `/api/files/download/${file.id}`;
+                                  link.download = file.fileName;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>

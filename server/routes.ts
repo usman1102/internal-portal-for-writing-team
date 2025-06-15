@@ -309,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fileName: fileInfo.name,
               fileSize: fileInfo.size,
               fileType: fileInfo.type,
-              fileUrl: `placeholder-url-${fileInfo.name}`, // In a real app, this would be the actual file URL after upload to storage
+              fileContent: `placeholder-content-${fileInfo.name}`, // This will be updated when we implement proper file upload
               category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
               isSubmission: false
             });
