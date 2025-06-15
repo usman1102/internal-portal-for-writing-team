@@ -36,6 +36,7 @@ interface TaskTableProps {
   onTaskCreate?: (data: any) => void;
   onTaskUpdate?: (id: number, data: any) => void;
   canCreateTasks?: boolean;
+  title?: string;
 }
 
 export function TaskTable({
@@ -45,6 +46,7 @@ export function TaskTable({
   onTaskCreate,
   onTaskUpdate,
   canCreateTasks = false,
+  title = "Tasks",
 }: TaskTableProps) {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,7 +92,7 @@ export function TaskTable({
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-        <h3 className="text-lg font-medium text-gray-800 font-heading">Tasks</h3>
+        <h3 className="text-lg font-medium text-gray-800 font-heading">{title}</h3>
         <div className="flex items-center space-x-2">
           <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
             <SelectTrigger className="w-[180px]">

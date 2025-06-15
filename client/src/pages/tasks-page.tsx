@@ -56,6 +56,15 @@ export default function TasksPage() {
     return updateTaskMutation.mutateAsync({ id, data });
   };
 
+  // Filter tasks for writers
+  const myTasks = user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER 
+    ? tasks.filter(task => task.assignedToId === user?.id)
+    : [];
+    
+  const unassignedTasks = user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER
+    ? tasks.filter(task => task.assignedToId === null)
+    : [];
+
   return (
     <div className="flex h-screen bg-gray-100">
       <DashboardSidebar 
@@ -72,14 +81,41 @@ export default function TasksPage() {
         
         <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
           <div className="space-y-6">
-            <TaskTable 
-              tasks={tasks}
-              users={users}
-              isLoading={isLoadingTasks || isLoadingUsers}
-              onTaskCreate={handleCreateTask}
-              onTaskUpdate={handleUpdateTask}
-              canCreateTasks={canCreateTasks}
-            />
+            {(user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER) ? (
+              <>
+                {/* My Assigned Tasks Table */}
+                <TaskTable 
+                  tasks={myTasks}
+                  users={users}
+                  isLoading={isLoadingTasks || isLoadingUsers}
+                  onTaskCreate={handleCreateTask}
+                  onTaskUpdate={handleUpdateTask}
+                  canCreateTasks={false}
+                  title="My Assigned Tasks"
+                />
+                
+                {/* Unassigned Tasks Table */}
+                <TaskTable 
+                  tasks={unassignedTasks}
+                  users={users}
+                  isLoading={isLoadingTasks || isLoadingUsers}
+                  onTaskCreate={handleCreateTask}
+                  onTaskUpdate={handleUpdateTask}
+                  canCreateTasks={false}
+                  title="Available Tasks"
+                />
+              </>
+            ) : (
+              /* All Tasks Table for non-writers */
+              <TaskTable 
+                tasks={tasks}
+                users={users}
+                isLoading={isLoadingTasks || isLoadingUsers}
+                onTaskCreate={handleCreateTask}
+                onTaskUpdate={handleUpdateTask}
+                canCreateTasks={canCreateTasks}
+              />
+            )}
           </div>
         </main>
       </div>
