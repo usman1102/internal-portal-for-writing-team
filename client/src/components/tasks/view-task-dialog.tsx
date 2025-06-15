@@ -28,19 +28,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileUpload } from "@/components/ui/file-upload";
-import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  formatCurrency, 
-  formatDate, 
-  getDaysRemaining, 
-  getInitials, 
-  getStatusColor 
-} from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/use-auth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  CalendarDays, 
+  User as UserIcon, 
+  FileText, 
+  Upload,
+  Clock,
+  Hash
+} from "lucide-react";
+import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  deadline: z.string().optional(),
+  status: z.string(),
+  assignedToId: z.number().nullable(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface ViewTaskDialogProps {
   task: Task;
@@ -59,102 +71,38 @@ export function ViewTaskDialog({
   onUpdateTask,
   users,
 }: ViewTaskDialogProps) {
-  const { toast } = useToast();
-  const { user: currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState("details");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Determine permissions based on user role
-  const canEditTask = currentUser?.role === UserRole.SALES || currentUser?.role === UserRole.TEAM_LEAD;
-  const canAssignTask = currentUser?.role === UserRole.SALES || currentUser?.role === UserRole.TEAM_LEAD;
-  const canSubmitWork = currentUser?.role === UserRole.WRITER && task.assignedToId === currentUser?.id;
-  const canUpdateStatus = currentUser?.role === UserRole.SALES || 
-                           currentUser?.role === UserRole.TEAM_LEAD ||
-                           (currentUser?.role === UserRole.WRITER && task.assignedToId === currentUser?.id) ||
-                           (currentUser?.role === UserRole.PROOFREADER);
-  
-  // Available writers for assignment
-  const availableWriters = users.filter(user => 
-    user.role === UserRole.WRITER && (user.status !== 'ON_LEAVE' || user.id === task.assignedToId)
-  );
+  const [activeTab, setActiveTab] = useState("details");
+  const { toast } = useToast();
 
-  // Form schema for task updates
-  const formSchema = z.object({
-    title: z.string().min(5, "Title must be at least 5 characters"),
-    description: z.string().min(10, "Description must be at least 10 characters"),
-    deadline: z.string().refine(date => !isNaN(Date.parse(date)), {
-      message: "Please select a valid date",
-    }),
-    status: z.string(),
-    assignedToId: z.number().nullable(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: task.title,
       description: task.description || "",
       deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : "",
-      status: task.status,
+      status: (task.status || TaskStatus.NEW) as string,
       assignedToId: task.assignedToId,
     },
   });
 
   const handleUploadFile = async (file: File) => {
-    // This would normally upload the file to a server or storage service
     return new Promise<void>((resolve) => {
-      // Simulate an upload delay
       setTimeout(() => {
         resolve();
       }, 1000);
     });
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Format the data before submitting
-      const taskData = {
-        ...data,
-        deadline: new Date(data.deadline),
-      };
-      
-      // Call the onUpdateTask callback if provided
-      if (onUpdateTask) {
-        await onUpdateTask(task.id, taskData);
-      }
-      
-      toast({
-        title: "Task updated",
-        description: "The task has been updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error updating task",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleStatusChange = async (newStatus: TaskStatus) => {
     try {
       setIsSubmitting(true);
-      
-      // Update the form value
-      form.setValue("status", newStatus);
-      
-      // Call the onUpdateTask callback if provided
       if (onUpdateTask) {
         await onUpdateTask(task.id, { status: newStatus });
       }
-      
       toast({
         title: "Status updated",
-        description: `Task status has been updated to ${newStatus.replace("_", " ")}`,
+        description: `Task status changed to ${newStatus.replace('_', ' ')}`,
       });
     } catch (error) {
       toast({
@@ -167,251 +115,186 @@ export function ViewTaskDialog({
     }
   };
 
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (onUpdateTask) {
+        const updateData = {
+          ...data,
+          deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
+        };
+        await onUpdateTask(task.id, updateData);
+      }
+
+      toast({
+        title: "Task updated",
+        description: "Task has been updated successfully",
+      });
+
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const canEdit = true; // For now, allow all users to edit
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Task Details</DialogTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-semibold">
+                {task.title}
+              </DialogTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Task ID: #{task.id}
+              </p>
+            </div>
+            <Badge className={getStatusColor((task.status || TaskStatus.NEW) as string)}>
+              {(task.status || TaskStatus.NEW).replace('_', ' ')}
+            </Badge>
+          </div>
         </DialogHeader>
 
-        <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3">
+        <Separator />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="edit" disabled={!canEditTask}>Edit</TabsTrigger>
-            <TabsTrigger value="submit" disabled={!canSubmitWork}>Submit Work</TabsTrigger>
+            <TabsTrigger value="files">Files</TabsTrigger>
+            <TabsTrigger value="comments">Comments</TabsTrigger>
           </TabsList>
 
-          {/* Details Tab */}
-          <TabsContent value="details" className="space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold">{task.title}</h3>
-                <p className="text-sm text-gray-500">
-                  Task ID: #{task.id}
-                </p>
-              </div>
-              <Badge className={getStatusColor(task.status)}>
-                {task.status.replace('_', ' ')}
-              </Badge>
-            </div>
+          <ScrollArea className="max-h-[60vh] mt-4">
+            <TabsContent value="details" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <UserIcon className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Assigned to:</span>
+                    {assignedUser ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-xs">
+                            {getInitials(assignedUser.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{assignedUser.fullName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Unassigned</span>
+                    )}
+                  </div>
+                </div>
 
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-sm">Description</h4>
-                <p className="mt-1 text-sm text-gray-600">{task.description || 'No description provided'}</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm">Assigned To</h4>
-                  {assignedUser ? (
-                    <div className="mt-1 flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-xs text-gray-600">
-                          {getInitials(assignedUser.fullName)}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <CalendarDays className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Due date:</span>
+                    {task.deadline ? (
+                      <div className="flex flex-col">
+                        <span>{formatDate(task.deadline)}</span>
+                        <span className="text-xs text-gray-500">
+                          {getDaysRemaining(task.deadline)}
                         </span>
                       </div>
-                      <div className="ml-2">
-                        <div className="text-sm font-medium">{assignedUser.fullName}</div>
-                        <div className="text-xs text-gray-500">{assignedUser.role.replace('_', ' ')}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-1 text-sm text-gray-500">Unassigned</p>
-                  )}
+                    ) : (
+                      <span className="text-gray-500">No deadline</span>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <h4 className="font-medium text-sm">Deadline</h4>
-                  {task.deadline ? (
-                    <div className="mt-1">
-                      <p className="text-sm">{formatDate(task.deadline)}</p>
-                      <p className="text-xs text-red-500">{getDaysRemaining(task.deadline)}</p>
+                {task.wordCount && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Hash className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">Word count:</span>
+                      <span>{task.wordCount} words</span>
                     </div>
-                  ) : (
-                    <p className="mt-1 text-sm text-gray-500">No deadline set</p>
-                  )}
-                </div>
-
-                {task.budget !== null && task.budget !== undefined && (
-                  <div>
-                    <h4 className="font-medium text-sm">Budget</h4>
-                    <p className="mt-1 text-sm">{formatCurrency(task.budget)}</p>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {canUpdateStatus && (
-              <div className="pt-4">
-                <h4 className="font-medium text-sm mb-2">Update Status</h4>
-                <div className="flex flex-wrap gap-2">
-                  {Object.values(TaskStatus).map((status) => (
-                    <Button
-                      key={status}
-                      size="sm"
-                      variant={task.status === status ? "default" : "outline"}
-                      onClick={() => handleStatusChange(status as TaskStatus)}
-                      disabled={isSubmitting || task.status === status}
-                    >
-                      {status.replace('_', ' ')}
-                    </Button>
-                  ))}
+                {task.clientName && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <UserIcon className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">Client:</span>
+                      <span>{task.clientName}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Created:</span>
+                    <span>{task.createdAt ? formatDateTime(task.createdAt) : 'Unknown'}</span>
+                  </div>
                 </div>
               </div>
-            )}
-          </TabsContent>
 
-          {/* Edit Tab */}
-          <TabsContent value="edit">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea rows={3} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  {canAssignTask && (
-                    <FormField
-                      control={form.control}
-                      name="assignedToId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Assign Writer</FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                            value={field.value?.toString() || ""}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select writer" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="">Unassigned</SelectItem>
-                              {availableWriters.map((writer) => (
-                                <SelectItem key={writer.id} value={writer.id.toString()}>
-                                  {writer.fullName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="deadline"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Deadline</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description:</label>
+                <div className="p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {task.description || "No description provided"}
+                  </p>
                 </div>
-
-                <DialogFooter className="mt-6">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setActiveTab("details")}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save Changes"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </TabsContent>
-
-          {/* Submit Work Tab */}
-          <TabsContent value="submit" className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Submit Your Work</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Upload Final Document
-                  </label>
-                  <FileUpload
-                    onUpload={handleUploadFile}
-                    accept=".pdf,.doc,.docx,.txt"
-                    maxSize={10}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Additional Notes
-                  </label>
-                  <Textarea
-                    rows={3}
-                    placeholder="Add any additional notes or context about your submission"
-                    className="mt-1"
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setActiveTab("details")}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      toast({
-                        title: "Work submitted",
-                        description: "Your work has been submitted successfully",
-                      });
-                      handleStatusChange(TaskStatus.REVIEW);
-                      setActiveTab("details");
-                    }}
-                  >
-                    Submit Work
-                  </Button>
-                </DialogFooter>
               </div>
-            </div>
-          </TabsContent>
+
+              {canEdit && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Update Status:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(TaskStatus).map((status) => (
+                      <Button
+                        key={status}
+                        size="sm"
+                        variant={(task.status || TaskStatus.NEW) === status ? "default" : "outline"}
+                        onClick={() => handleStatusChange(status as TaskStatus)}
+                        disabled={isSubmitting || (task.status || TaskStatus.NEW) === status}
+                      >
+                        {status.replace('_', ' ')}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="files" className="space-y-4">
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No files uploaded yet</p>
+                <Button variant="outline" className="mt-4">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload File
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="comments" className="space-y-4">
+              <div className="text-center py-8">
+                <p className="text-gray-500">No comments yet</p>
+              </div>
+            </TabsContent>
+          </ScrollArea>
         </Tabs>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
