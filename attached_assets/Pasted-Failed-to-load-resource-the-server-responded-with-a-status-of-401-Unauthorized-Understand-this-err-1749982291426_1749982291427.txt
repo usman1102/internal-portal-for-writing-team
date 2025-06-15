@@ -1,0 +1,36 @@
+Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+api/login:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+chunk-RPCDYKBN.js?v=be157c9f:521 Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at a
+    at https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=be157c9f:337:18
+    at SidebarLink (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/src/components/dashboard/dashboard-sidebar.tsx:34:24)
+    at nav
+    at div
+    at DashboardSidebar (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/src/components/dashboard/dashboard-sidebar.tsx:72:36)
+    at div
+    at DashboardPage (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/src/pages/dashboard-page.tsx:38:20)
+    at component
+    at Route (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=be157c9f:323:16)
+    at ProtectedRoute (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=be157c9f:379:17)
+    at Router
+    at Provider (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=be157c9f:38:15)
+    at TooltipProvider (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=be157c9f:60:5)
+    at AuthProvider (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/src/hooks/use-auth.tsx:27:32)
+    at QueryClientProvider (https://8efd477b-0d4a-4d8b-8b59-558629dbd129-00-1pg2wde1jjl74.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=be157c9f:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=be157c9f:521Understand this error
+api/teams:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 (Forbidden)Understand this error
+tasks-page.tsx:69 All tasks: Array(1)
+tasks-page.tsx:70 User ID: 2
+tasks-page.tsx:71 My tasks: Array(1)
+tasks-page.tsx:72 Unassigned tasks: Array(0)
+tasks-page.tsx:73 Tasks with null assignedToId: Array(0)
+tasks-page.tsx:74 Tasks with undefined assignedToId: Array(0
