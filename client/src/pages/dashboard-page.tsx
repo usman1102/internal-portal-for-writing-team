@@ -146,6 +146,11 @@ export default function DashboardPage() {
     return updateUserStatusMutation.mutateAsync({ id, status });
   };
 
+  // Handle deleting a task
+  const handleDeleteTask = async (id: number) => {
+    return deleteTaskMutation.mutateAsync(id);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <DashboardSidebar 
@@ -200,6 +205,7 @@ export default function DashboardPage() {
               isLoading={isLoadingTasks}
               onTaskCreate={handleCreateTask}
               onTaskUpdate={handleUpdateTask}
+              onTaskDelete={handleDeleteTask}
               canCreateTasks={canCreateTasks}
             />
             

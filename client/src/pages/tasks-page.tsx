@@ -56,6 +56,21 @@ export default function TasksPage() {
     return updateTaskMutation.mutateAsync({ id, data });
   };
 
+  // Delete task mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest('DELETE', `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    }
+  });
+
+  // Handle deleting a task
+  const handleDeleteTask = async (id: number) => {
+    return deleteTaskMutation.mutateAsync(id);
+  };
+
   // Filter tasks for writers and team leads
   const myTasks = (() => {
     if (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER) {
@@ -103,6 +118,7 @@ export default function TasksPage() {
                   isLoading={isLoadingTasks || isLoadingUsers}
                   onTaskCreate={handleCreateTask}
                   onTaskUpdate={handleUpdateTask}
+                  onTaskDelete={handleDeleteTask}
                   canCreateTasks={user?.role === UserRole.TEAM_LEAD}
                   title={user?.role === UserRole.TEAM_LEAD ? "Team Assigned Tasks" : "My Assigned Tasks"}
                 />
@@ -114,6 +130,7 @@ export default function TasksPage() {
                   isLoading={isLoadingTasks || isLoadingUsers}
                   onTaskCreate={handleCreateTask}
                   onTaskUpdate={handleUpdateTask}
+                  onTaskDelete={handleDeleteTask}
                   canCreateTasks={user?.role === UserRole.TEAM_LEAD}
                   title="Available Tasks"
                 />
@@ -126,6 +143,7 @@ export default function TasksPage() {
                 isLoading={isLoadingTasks || isLoadingUsers}
                 onTaskCreate={handleCreateTask}
                 onTaskUpdate={handleUpdateTask}
+                onTaskDelete={handleDeleteTask}
                 canCreateTasks={canCreateTasks}
               />
             )}
