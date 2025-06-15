@@ -47,6 +47,8 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
+  wordCount: integer("word_count"),
+  clientName: text("client_name"),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   assignedById: integer("assigned_by_id").references(() => users.id),
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
@@ -105,8 +107,10 @@ export type User = typeof users.$inferSelect;
 
 
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true }).extend({
-  deadline: z.string().optional().transform((val) => val ? new Date(val) : undefined)
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, assignedToId: true }).extend({
+  deadline: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+  wordCount: z.number().positive().optional(),
+  clientName: z.string().min(1, "Client name is required")
 });
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;

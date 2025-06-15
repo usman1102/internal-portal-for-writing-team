@@ -245,9 +245,9 @@ export function TaskTable({
                     <TableCell>
                       <span className={cn(
                         "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
-                        getStatusColor(task.status)
+                        getStatusColor((task.status || 'NEW') as string)
                       )}>
-                        {task.status.replace('_', ' ')}
+                        {(task.status || 'NEW').replace('_', ' ')}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
