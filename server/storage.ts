@@ -4,6 +4,7 @@ import {
   files, 
   comments, 
   activities, 
+  notifications,
   teams,
   type User, 
   type InsertUser,
@@ -15,6 +16,8 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
+  type Notification as AppNotification,
+  type InsertNotification as InsertAppNotification,
   type Team,
   type InsertTeam,
   UserRole,
@@ -26,7 +29,7 @@ import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { db, pool } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -70,10 +73,10 @@ export interface IStorage {
   createActivity(activity: InsertActivity): Promise<Activity>;
 
   // Notification methods
-  getNotification(id: number): Promise<Notification | undefined>;
-  getNotificationsByUser(userId: number): Promise<Notification[]>;
-  getUnreadNotificationsByUser(userId: number): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotification(id: number): Promise<AppNotification | undefined>;
+  getNotificationsByUser(userId: number): Promise<AppNotification[]>;
+  getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]>;
+  createNotification(notification: InsertAppNotification): Promise<AppNotification>;
   markNotificationAsRead(id: number): Promise<void>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
 
@@ -582,7 +585,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Notification methods
-  async getNotification(id: number): Promise<Notification | undefined> {
+  async getNotification(id: number): Promise<AppNotification | undefined> {
     const [notification] = await db
       .select()
       .from(notifications)
@@ -590,7 +593,7 @@ export class DatabaseStorage implements IStorage {
     return notification || undefined;
   }
 
-  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+  async getNotificationsByUser(userId: number): Promise<AppNotification[]> {
     return await db
       .select()
       .from(notifications)
@@ -598,7 +601,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notifications.createdAt));
   }
 
-  async getUnreadNotificationsByUser(userId: number): Promise<Notification[]> {
+  async getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]> {
     return await db
       .select()
       .from(notifications)
@@ -606,7 +609,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notifications.createdAt));
   }
 
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+  async createNotification(notificationData: InsertAppNotification): Promise<AppNotification> {
     const [notification] = await db
       .insert(notifications)
       .values(notificationData)

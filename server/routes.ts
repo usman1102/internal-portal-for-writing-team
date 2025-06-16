@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertNotificationSchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -856,6 +856,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const teamId = parseInt(req.params.id);
       await storage.deleteTeam(teamId);
+      res.sendStatus(200);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Notification routes
+  app.get("/api/notifications", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notifications = await storage.getNotificationsByUser(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/notifications/unread", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notifications = await storage.getUnreadNotificationsByUser(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/notifications/:id/read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationAsRead(notificationId);
+      res.sendStatus(200);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/notifications/mark-all-read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.markAllNotificationsAsRead(req.user.id);
       res.sendStatus(200);
     } catch (error) {
       next(error);
