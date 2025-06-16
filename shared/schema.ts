@@ -103,6 +103,19 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Notifications schema
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // 'task_created', 'task_assigned', 'status_changed', 'file_uploaded', 'team_member_added'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  relatedTaskId: integer("related_task_id").references(() => tasks.id),
+  relatedUserId: integer("related_user_id").references(() => users.id),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 // Schema validation with Zod
@@ -132,7 +145,9 @@ export const insertActivitySchema = createInsertSchema(activities).omit({ id: tr
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 
-
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
 
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
