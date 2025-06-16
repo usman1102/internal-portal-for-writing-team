@@ -436,27 +436,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Notify task creator when status changes
         if (task.assignedById && task.assignedById !== req.user.id) {
-          await storage.createNotification({
+          notificationManager.create({
             userId: task.assignedById,
             type: 'TASK_STATUS_CHANGED',
             title: 'Task Status Updated',
             message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
             relatedTaskId: taskId,
-            relatedUserId: req.user.id,
-            isRead: false
+            relatedUserId: req.user.id
           });
         }
 
         // Notify assigned user when status changes (if different from updater)
         if (task.assignedToId && task.assignedToId !== req.user.id) {
-          await storage.createNotification({
+          notificationManager.create({
             userId: task.assignedToId,
             type: 'TASK_STATUS_CHANGED',
             title: 'Your Task Status Updated',
             message: `Your task "${task.title}" status changed to ${newStatus}`,
             relatedTaskId: taskId,
-            relatedUserId: req.user.id,
-            isRead: false
+            relatedUserId: req.user.id
           });
         }
 
@@ -467,14 +465,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const teamLeads = allUsers.filter(u => u.role === UserRole.TEAM_LEAD);
           
           for (const teamLead of teamLeads) {
-            await storage.createNotification({
+            notificationManager.create({
               userId: teamLead.id,
               type: 'TASK_COMPLETED',
               title: 'Task Completed',
               message: `Task "${task.title}" has been completed by ${req.user.fullName}`,
               relatedTaskId: taskId,
-              relatedUserId: req.user.id,
-              isRead: false
+              relatedUserId: req.user.id
             });
           }
         }
@@ -917,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      const notifications = await storage.getNotificationsByUser(req.user.id);
+      const notifications = notificationManager.getAllForUser(req.user.id);
       res.json(notifications);
     } catch (error) {
       next(error);
@@ -928,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      const notifications = await storage.getUnreadNotificationsByUser(req.user.id);
+      const notifications = notificationManager.getUnreadForUser(req.user.id);
       res.json(notifications);
     } catch (error) {
       next(error);
@@ -940,7 +937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
       const notificationId = parseInt(req.params.id);
-      await storage.markNotificationAsRead(notificationId);
+      notificationManager.markAsRead(notificationId);
       res.sendStatus(200);
     } catch (error) {
       next(error);
@@ -951,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
       
-      await storage.markAllNotificationsAsRead(req.user.id);
+      notificationManager.markAllAsRead(req.user.id);
       res.sendStatus(200);
     } catch (error) {
       next(error);
