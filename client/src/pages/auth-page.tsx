@@ -90,46 +90,10 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-primary flex items-center justify-center p-8">
       <div className="w-full max-w-md">
-        {/* Header Section */}
-        <div className="text-center mb-8 text-white">
-          <h1 className="text-3xl font-bold mb-4 font-heading">
-            WritePro: Freelance Writing Management Portal
-          </h1>
-          <p className="text-lg text-white/90 mb-6">
-            Streamline your content creation workflow with our comprehensive management solution.
-          </p>
-          
-          <div className="space-y-4 mb-8">
-            <div className="flex items-center justify-center space-x-3">
-              <div className="rounded-full bg-white/10 p-2">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-semibold">Efficient Task Management</h3>
-                <p className="text-white/80 text-sm">
-                  Create, assign, and track writing tasks with ease
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center space-x-3">
-              <div className="rounded-full bg-white/10 p-2">
-                <Users className="h-5 w-5" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-semibold">Role-Based Access</h3>
-                <p className="text-white/80 text-sm">
-                  Secure access for all team roles
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         {/* Login Form */}
         <Card className="backdrop-blur-md bg-white/95 border-0 shadow-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome to WritePro</CardTitle>
+            <CardTitle className="text-2xl">Welcome to PaperSlay</CardTitle>
             <CardDescription>
               Please log in to your account
             </CardDescription>
