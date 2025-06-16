@@ -80,6 +80,7 @@ export function ViewTaskDialog({
   users,
 }: ViewTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // File deletion mutation
   const deleteFileMutation = useMutation({
@@ -268,6 +269,12 @@ export function ViewTaskDialog({
         // Force refresh all task queries to ensure consistency across all views
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       }
+      
+      // Show celebration animation for completed tasks
+      if (newStatus === TaskStatus.COMPLETED) {
+        setShowCelebration(true);
+      }
+      
       toast({
         title: "Status updated",
         description: `Task status changed to ${newStatus.replace('_', ' ')}`,

@@ -16,7 +16,6 @@ interface DashboardHeaderProps {
 export function DashboardHeader({
   title,
   onToggleSidebar,
-  notificationCount = 0,
 }: DashboardHeaderProps) {
   return (
     <header className="bg-white shadow-sm z-10">
@@ -36,26 +35,7 @@ export function DashboardHeader({
         </div>
 
         <div className="flex items-center space-x-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5 text-gray-500" />
-                  {notificationCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                      {notificationCount}
-                    </Badge>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Notifications</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <NotificationDropdown />
 
           <TooltipProvider>
             <Tooltip>
