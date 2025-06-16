@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
+
 
 interface DashboardHeaderProps {
   title: string;
@@ -35,7 +35,6 @@ export function DashboardHeader({
         </div>
 
         <div className="flex items-center space-x-4">
-          <NotificationDropdown />
 
           <TooltipProvider>
             <Tooltip>

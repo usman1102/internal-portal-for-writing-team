@@ -2,9 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertNotificationSchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
-import { notificationManager } from "./notifications";
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -430,51 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
-        // Create notifications for status changes
-        const oldStatus = task.status;
-        const newStatus = req.body.status;
-        
-        // Notify task creator when status changes
-        if (task.assignedById && task.assignedById !== req.user.id) {
-          notificationManager.create({
-            userId: task.assignedById,
-            type: 'TASK_STATUS_CHANGED',
-            title: 'Task Status Updated',
-            message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
-            relatedTaskId: taskId,
-            relatedUserId: req.user.id
-          });
-        }
 
-        // Notify assigned user when status changes (if different from updater)
-        if (task.assignedToId && task.assignedToId !== req.user.id) {
-          notificationManager.create({
-            userId: task.assignedToId,
-            type: 'TASK_STATUS_CHANGED',
-            title: 'Your Task Status Updated',
-            message: `Your task "${task.title}" status changed to ${newStatus}`,
-            relatedTaskId: taskId,
-            relatedUserId: req.user.id
-          });
-        }
-
-        // Special notification for completed tasks
-        if (newStatus === 'COMPLETED') {
-          // Notify team lead if task is completed
-          const allUsers = await storage.getAllUsers();
-          const teamLeads = allUsers.filter(u => u.role === UserRole.TEAM_LEAD);
-          
-          for (const teamLead of teamLeads) {
-            notificationManager.create({
-              userId: teamLead.id,
-              type: 'TASK_COMPLETED',
-              title: 'Task Completed',
-              message: `Task "${task.title}" has been completed by ${req.user.fullName}`,
-              relatedTaskId: taskId,
-              relatedUserId: req.user.id
-            });
-          }
-        }
       }
       
       res.json(updatedTask);
@@ -909,51 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notification routes
-  app.get("/api/notifications", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notifications = notificationManager.getAllForUser(req.user.id);
-      res.json(notifications);
-    } catch (error) {
-      next(error);
-    }
-  });
 
-  app.get("/api/notifications/unread", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notifications = notificationManager.getUnreadForUser(req.user.id);
-      res.json(notifications);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.put("/api/notifications/:id/read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notificationId = parseInt(req.params.id);
-      notificationManager.markAsRead(notificationId);
-      res.sendStatus(200);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.put("/api/notifications/mark-all-read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      notificationManager.markAllAsRead(req.user.id);
-      res.sendStatus(200);
-    } catch (error) {
-      next(error);
-    }
-  });
 
   const httpServer = createServer(app);
 
