@@ -402,6 +402,9 @@ export class MemStorage implements IStorage {
     const notification: AppNotification = {
       id: this.notificationIdCounter++,
       ...notificationData,
+      relatedTaskId: notificationData.relatedTaskId || null,
+      relatedUserId: notificationData.relatedUserId || null,
+      isRead: notificationData.isRead || false,
       createdAt: new Date(),
     };
     this.notificationsData.set(notification.id, notification);
@@ -417,7 +420,8 @@ export class MemStorage implements IStorage {
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<void> {
-    for (const [id, notification] of this.notificationsData.entries()) {
+    const notifications = Array.from(this.notificationsData.entries());
+    for (const [id, notification] of notifications) {
       if (notification.userId === userId && !notification.isRead) {
         notification.isRead = true;
         this.notificationsData.set(id, notification);

@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertNotificationSchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
+import { notificationManager } from "./notifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -428,6 +429,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action,
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
+
+        // Create notifications for status changes
+        const oldStatus = task.status;
+        const newStatus = req.body.status;
+        
+        // Notify task creator when status changes
+        if (task.assignedById && task.assignedById !== req.user.id) {
+          await storage.createNotification({
+            userId: task.assignedById,
+            type: 'TASK_STATUS_CHANGED',
+            title: 'Task Status Updated',
+            message: `Task "${task.title}" status changed from ${oldStatus} to ${newStatus}`,
+            relatedTaskId: taskId,
+            relatedUserId: req.user.id,
+            isRead: false
+          });
+        }
+
+        // Notify assigned user when status changes (if different from updater)
+        if (task.assignedToId && task.assignedToId !== req.user.id) {
+          await storage.createNotification({
+            userId: task.assignedToId,
+            type: 'TASK_STATUS_CHANGED',
+            title: 'Your Task Status Updated',
+            message: `Your task "${task.title}" status changed to ${newStatus}`,
+            relatedTaskId: taskId,
+            relatedUserId: req.user.id,
+            isRead: false
+          });
+        }
+
+        // Special notification for completed tasks
+        if (newStatus === 'COMPLETED') {
+          // Notify team lead if task is completed
+          const allUsers = await storage.getAllUsers();
+          const teamLeads = allUsers.filter(u => u.role === UserRole.TEAM_LEAD);
+          
+          for (const teamLead of teamLeads) {
+            await storage.createNotification({
+              userId: teamLead.id,
+              type: 'TASK_COMPLETED',
+              title: 'Task Completed',
+              message: `Task "${task.title}" has been completed by ${req.user.fullName}`,
+              relatedTaskId: taskId,
+              relatedUserId: req.user.id,
+              isRead: false
+            });
+          }
+        }
       }
       
       res.json(updatedTask);
