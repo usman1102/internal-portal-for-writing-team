@@ -99,7 +99,7 @@ export class MemStorage implements IStorage {
   private filesData: Map<number, File>;
   private commentsData: Map<number, Comment>;
   private activitiesData: Map<number, Activity>;
-
+  private notificationsData: Map<number, AppNotification>;
   private teamsData: Map<number, Team>;
   sessionStore: session.Store;
   
@@ -402,7 +402,7 @@ export class MemStorage implements IStorage {
     const notification: AppNotification = {
       id: this.notificationIdCounter++,
       ...notificationData,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     };
     this.notificationsData.set(notification.id, notification);
     return notification;
