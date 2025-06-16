@@ -16,8 +16,7 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
-  type Notification as AppNotification,
-  type InsertNotification as InsertAppNotification,
+
   type Team,
   type InsertTeam,
   UserRole,
@@ -72,13 +71,7 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 
-  // Notification methods
-  getNotification(id: number): Promise<AppNotification | undefined>;
-  getNotificationsByUser(userId: number): Promise<AppNotification[]>;
-  getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]>;
-  createNotification(notification: InsertAppNotification): Promise<AppNotification>;
-  markNotificationAsRead(id: number): Promise<void>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
+
 
   // Team methods
   getTeam(id: number): Promise<Team | undefined>;
@@ -99,7 +92,7 @@ export class MemStorage implements IStorage {
   private filesData: Map<number, File>;
   private commentsData: Map<number, Comment>;
   private activitiesData: Map<number, Activity>;
-  private notificationsData: Map<number, AppNotification>;
+
   private teamsData: Map<number, Team>;
   sessionStore: session.Store;
   
@@ -384,50 +377,7 @@ export class MemStorage implements IStorage {
     this.teamsData.delete(id);
   }
 
-  // Notification methods
-  async getNotification(id: number): Promise<AppNotification | undefined> {
-    return this.notificationsData.get(id);
-  }
 
-  async getNotificationsByUser(userId: number): Promise<AppNotification[]> {
-    return Array.from(this.notificationsData.values()).filter(n => n.userId === userId);
-  }
-
-  async getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]> {
-    return Array.from(this.notificationsData.values())
-      .filter(n => n.userId === userId && !n.isRead);
-  }
-
-  async createNotification(notificationData: InsertAppNotification): Promise<AppNotification> {
-    const notification: AppNotification = {
-      id: this.notificationIdCounter++,
-      ...notificationData,
-      relatedTaskId: notificationData.relatedTaskId || null,
-      relatedUserId: notificationData.relatedUserId || null,
-      isRead: notificationData.isRead || false,
-      createdAt: new Date(),
-    };
-    this.notificationsData.set(notification.id, notification);
-    return notification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    const notification = this.notificationsData.get(id);
-    if (notification) {
-      notification.isRead = true;
-      this.notificationsData.set(id, notification);
-    }
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    const notifications = Array.from(this.notificationsData.entries());
-    for (const [id, notification] of notifications) {
-      if (notification.userId === userId && !notification.isRead) {
-        notification.isRead = true;
-        this.notificationsData.set(id, notification);
-      }
-    }
-  }
 }
 
 // PostgreSQL Database Storage Implementation
@@ -629,52 +579,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(teams).where(eq(teams.id, id));
   }
 
-  // Notification methods
-  async getNotification(id: number): Promise<AppNotification | undefined> {
-    const [notification] = await db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.id, id));
-    return notification || undefined;
-  }
 
-  async getNotificationsByUser(userId: number): Promise<AppNotification[]> {
-    return await db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
-  }
-
-  async getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]> {
-    return await db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)))
-      .orderBy(desc(notifications.createdAt));
-  }
-
-  async createNotification(notificationData: InsertAppNotification): Promise<AppNotification> {
-    const [notification] = await db
-      .insert(notifications)
-      .values(notificationData)
-      .returning();
-    return notification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, id));
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
-  }
 }
 
 export const storage = new DatabaseStorage();
