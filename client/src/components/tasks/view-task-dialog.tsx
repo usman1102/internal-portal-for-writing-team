@@ -239,11 +239,11 @@ export function ViewTaskDialog({
   const canUploadInstructions = user?.role === UserRole.SUPERADMIN || 
                                user?.role === UserRole.SALES ||
                                user?.role === UserRole.TEAM_LEAD;
-  const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
-  const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
-  const canUploadFeedback = user?.role === UserRole.SUPERADMIN ||
+  const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER) && user?.role !== UserRole.SALES;
+  const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER) && user?.role !== UserRole.SALES;
+  const canUploadFeedback = (user?.role === UserRole.SUPERADMIN ||
                            user?.role === UserRole.TEAM_LEAD ||
-                           user?.role === UserRole.PROOFREADER;
+                           user?.role === UserRole.PROOFREADER) && user?.role !== UserRole.SALES;
   
   // Check permissions for file deletion/management
   const canManageFiles = user?.role === UserRole.SUPERADMIN || 
