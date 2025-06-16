@@ -239,12 +239,8 @@ export function ViewTaskDialog({
   const canUploadInstructions = user?.role === UserRole.SUPERADMIN || 
                                user?.role === UserRole.SALES ||
                                user?.role === UserRole.TEAM_LEAD;
-  const canUploadDrafts = task.assignedToId === assignedUser?.id && 
-                         (assignedUser?.role === UserRole.WRITER) &&
-                         user?.role !== UserRole.SALES;
-  const canUploadFinal = task.assignedToId === assignedUser?.id && 
-                        (assignedUser?.role === UserRole.WRITER) &&
-                        user?.role !== UserRole.SALES;
+  const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
+  const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER);
   const canUploadFeedback = user?.role === UserRole.SUPERADMIN ||
                            user?.role === UserRole.TEAM_LEAD ||
                            user?.role === UserRole.PROOFREADER;
