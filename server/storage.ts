@@ -383,6 +383,47 @@ export class MemStorage implements IStorage {
   async deleteTeam(id: number): Promise<void> {
     this.teamsData.delete(id);
   }
+
+  // Notification methods
+  async getNotification(id: number): Promise<AppNotification | undefined> {
+    return this.notificationsData.get(id);
+  }
+
+  async getNotificationsByUser(userId: number): Promise<AppNotification[]> {
+    return Array.from(this.notificationsData.values()).filter(n => n.userId === userId);
+  }
+
+  async getUnreadNotificationsByUser(userId: number): Promise<AppNotification[]> {
+    return Array.from(this.notificationsData.values())
+      .filter(n => n.userId === userId && !n.isRead);
+  }
+
+  async createNotification(notificationData: InsertAppNotification): Promise<AppNotification> {
+    const notification: AppNotification = {
+      id: this.notificationIdCounter++,
+      ...notificationData,
+      createdAt: new Date().toISOString(),
+    };
+    this.notificationsData.set(notification.id, notification);
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    const notification = this.notificationsData.get(id);
+    if (notification) {
+      notification.isRead = true;
+      this.notificationsData.set(id, notification);
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    for (const [id, notification] of this.notificationsData.entries()) {
+      if (notification.userId === userId && !notification.isRead) {
+        notification.isRead = true;
+        this.notificationsData.set(id, notification);
+      }
+    }
+  }
 }
 
 // PostgreSQL Database Storage Implementation

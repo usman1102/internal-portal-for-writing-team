@@ -51,6 +51,7 @@ import {
 import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { CelebrationAnimation } from "@/components/animations/celebration";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -244,7 +245,7 @@ export function ViewTaskDialog({
   const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER) && user?.role !== UserRole.SALES;
   const canUploadFeedback = (user?.role === UserRole.SUPERADMIN ||
                            user?.role === UserRole.TEAM_LEAD ||
-                           user?.role === UserRole.PROOFREADER) && user?.role !== UserRole.SALES;
+                           user?.role === UserRole.PROOFREADER);
   
   // Check permissions for file deletion/management
   const canManageFiles = user?.role === UserRole.SUPERADMIN || 
@@ -781,6 +782,10 @@ export function ViewTaskDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <CelebrationAnimation 
+        isVisible={showCelebration} 
+        onComplete={() => setShowCelebration(false)} 
+      />
     </Dialog>
   );
 }
