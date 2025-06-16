@@ -1,4 +1,4 @@
-import { Bell, HelpCircle, Menu } from "lucide-react";
+import { HelpCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -6,12 +6,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 
 interface DashboardHeaderProps {
   title: string;
   onToggleSidebar: () => void;
-  notificationCount?: number;
 }
 
 export function DashboardHeader({
