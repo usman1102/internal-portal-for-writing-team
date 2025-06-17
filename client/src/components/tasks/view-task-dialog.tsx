@@ -63,7 +63,12 @@ const formSchema = z.object({
   assignedToId: z.number().nullable(),
 });
 
+const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty"),
+});
+
 type FormData = z.infer<typeof formSchema>;
+type CommentFormData = z.infer<typeof commentSchema>;
 
 interface ViewTaskDialogProps {
   task: Task;
@@ -105,6 +110,32 @@ export function ViewTaskDialog({
       });
     },
   });
+
+  // Comment creation mutation
+  const createCommentMutation = useMutation({
+    mutationFn: async (commentData: CommentFormData) => {
+      return apiRequest('POST', '/api/comments', {
+        ...commentData,
+        taskId: task.id,
+        userId: user?.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/comments/${task.id}`] });
+      commentForm.reset();
+      toast({
+        title: "Comment added",
+        description: "Your comment has been posted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Comment failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const [activeTab, setActiveTab] = useState("details");
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: File[] }>({
@@ -122,6 +153,12 @@ export function ViewTaskDialog({
     enabled: isOpen && !!task.id,
   });
 
+  // Fetch comments for this task
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
+    queryKey: [`/api/comments/${task.id}`],
+    enabled: isOpen && !!task.id,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -130,6 +167,13 @@ export function ViewTaskDialog({
       deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : "",
       status: (task.status || TaskStatus.NEW) as string,
       assignedToId: task.assignedToId,
+    },
+  });
+
+  const commentForm = useForm<CommentFormData>({
+    resolver: zodResolver(commentSchema),
+    defaultValues: {
+      content: "",
     },
   });
 
@@ -255,6 +299,12 @@ export function ViewTaskDialog({
                         (task.assignedToId === user?.id && 
                          (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER));
 
+  // Comment permissions: Sales, Team Lead, Assigned Writer, Superadmin can comment
+  const canComment = user?.role === UserRole.SUPERADMIN || 
+                    user?.role === UserRole.SALES || 
+                    user?.role === UserRole.TEAM_LEAD || 
+                    user?.id === task.assignedToId;
+
   // Special permission for sales to delete instruction files they uploaded
   const canDeleteInstructionFiles = (file: any) => {
     if (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD) return true;
@@ -325,6 +375,11 @@ export function ViewTaskDialog({
   };
 
   const canEdit = true; // For now, allow all users to edit
+
+  const handleCommentSubmit = async (data: CommentFormData) => {
+    if (!user) return;
+    await createCommentMutation.mutateAsync(data);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
