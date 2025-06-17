@@ -383,7 +383,7 @@ export function ViewTaskDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -402,16 +402,17 @@ export function ViewTaskDialog({
 
         <Separator />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3 shrink-0">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="max-h-[60vh] mt-4">
-            <TabsContent value="details" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex-1 min-h-0 mt-4">
+            <ScrollArea className="h-full w-full pr-4">
+              <TabsContent value="details" className="space-y-4 pr-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-x-auto min-w-0">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <UserIcon className="h-4 w-4 text-gray-500" />
@@ -915,7 +916,8 @@ export function ViewTaskDialog({
                 )}
               </div>
             </TabsContent>
-          </ScrollArea>
+            </ScrollArea>
+          </div>
         </Tabs>
 
         <DialogFooter>
