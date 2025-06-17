@@ -42,7 +42,7 @@ export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  teamLeadId: integer("team_lead_id").references(() => users.id),
+  teamLeadId: integer("team_lead_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -53,8 +53,8 @@ export const tasks = pgTable("tasks", {
   description: text("description"),
   wordCount: integer("word_count"),
   clientName: text("client_name"),
-  assignedToId: integer("assigned_to_id").references(() => users.id),
-  assignedById: integer("assigned_by_id").references(() => users.id),
+  assignedToId: integer("assigned_to_id").references(() => users.id, { onDelete: "set null" }),
+  assignedById: integer("assigned_by_id").references(() => users.id, { onDelete: "set null" }),
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   deadline: timestamp("deadline"),
   submissionDate: timestamp("submission_date"),
@@ -73,8 +73,8 @@ export enum FileCategory {
 // Files schema
 export const files = pgTable("files", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id).notNull(),
-  uploadedById: integer("uploaded_by_id").references(() => users.id).notNull(),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }).notNull(),
+  uploadedById: integer("uploaded_by_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
@@ -87,8 +87,8 @@ export const files = pgTable("files", {
 // Comments schema
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id),
-  userId: integer("user_id").references(() => users.id),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -96,8 +96,8 @@ export const comments = pgTable("comments", {
 // Activities schema
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  taskId: integer("task_id").references(() => tasks.id),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
   action: text("action").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -106,12 +106,12 @@ export const activities = pgTable("activities", {
 // Notifications schema
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   type: text("type").notNull(), // 'task_created', 'task_assigned', 'status_changed', 'file_uploaded', 'team_member_added'
   title: text("title").notNull(),
   message: text("message").notNull(),
-  relatedTaskId: integer("related_task_id").references(() => tasks.id),
-  relatedUserId: integer("related_user_id").references(() => users.id),
+  relatedTaskId: integer("related_task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  relatedUserId: integer("related_user_id").references(() => users.id, { onDelete: "cascade" }),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
