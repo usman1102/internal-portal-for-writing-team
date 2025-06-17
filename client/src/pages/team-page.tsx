@@ -986,16 +986,17 @@ export default function TeamPage() {
       
       {/* Add Team Member Dialog */}
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>
               Create a new account for a team member
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-1">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -1118,23 +1119,26 @@ export default function TeamPage() {
                 />
               )}
               
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddMemberOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={addMemberMutation.isPending}
-                >
-                  {addMemberMutation.isPending ? "Adding..." : "Add Member"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </div>
+          
+          <DialogFooter className="flex-shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddMemberOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              form="add-member-form"
+              disabled={addMemberMutation.isPending}
+            >
+              {addMemberMutation.isPending ? "Adding..." : "Add Member"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
