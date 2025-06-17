@@ -1434,17 +1434,18 @@ export default function TeamPage() {
 
       {/* Edit Team Member Dialog */}
       <Dialog open={isEditMemberOpen} onOpenChange={setIsEditMemberOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-[500px] h-[90vh] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Edit Team Member</DialogTitle>
             <DialogDescription>
               Update team member information
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 pb-4">
+                <FormField
                 control={editForm.control}
                 name="username"
                 render={({ field }) => (
@@ -1594,23 +1595,24 @@ export default function TeamPage() {
                 )}
               />
               
-              <DialogFooter className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditMemberOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={updateUserMutation.isPending}
-                >
-                  {updateUserMutation.isPending ? "Updating..." : "Update Member"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                <div className="pt-4 flex justify-end space-x-2 sticky bottom-0 bg-white border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditMemberOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={updateUserMutation.isPending}
+                  >
+                    {updateUserMutation.isPending ? "Updating..." : "Update Member"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
