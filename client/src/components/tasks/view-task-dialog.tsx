@@ -826,8 +826,93 @@ export function ViewTaskDialog({
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4">
-              <div className="text-center py-8">
-                <p className="text-gray-500">No comments yet</p>
+              <div className="flex flex-col h-[400px]">
+                <div className="flex-1 overflow-y-auto mb-4">
+                  {commentsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : comments.length > 0 ? (
+                    <div className="space-y-4">
+                      {comments.map((comment) => {
+                        const commentUser = users.find(u => u.id === comment.userId);
+                        return (
+                          <div key={comment.id} className="flex gap-3 p-4 bg-gray-50 rounded-lg">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {commentUser ? getInitials(commentUser.fullName) : 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-medium text-sm">
+                                  {commentUser?.fullName || 'Unknown User'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {formatDateTime(comment.createdAt!)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {comment.content}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No comments yet</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Be the first to comment on this task
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {canComment && (
+                  <div className="border-t pt-4">
+                    <Form {...commentForm}>
+                      <form onSubmit={commentForm.handleSubmit(handleCommentSubmit)} className="space-y-4">
+                        <FormField
+                          control={commentForm.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Write a comment..."
+                                  className="min-h-[80px] resize-none"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end">
+                          <Button 
+                            type="submit" 
+                            disabled={createCommentMutation.isPending}
+                            className="flex items-center gap-2"
+                          >
+                            <Send className="h-4 w-4" />
+                            {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </div>
+                )}
+                
+                {!canComment && (
+                  <div className="border-t pt-4 text-center">
+                    <p className="text-sm text-gray-500">
+                      You need appropriate permissions to comment on this task
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </ScrollArea>
