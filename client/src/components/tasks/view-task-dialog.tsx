@@ -89,6 +89,10 @@ export function ViewTaskDialog({
 }: ViewTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [activeTab, setActiveTab] = useState<"details" | "files" | "comments">("details");
+
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   // File deletion mutation
   const deleteFileMutation = useMutation({
@@ -99,77 +103,94 @@ export function ViewTaskDialog({
       queryClient.invalidateQueries({ queryKey: [`/api/files/${task.id}`] });
       toast({
         title: "File deleted",
-        description: "File has been removed successfully",
+        description: "File has been deleted successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Delete failed",
+        title: "Error deleting file",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Comment creation mutation
+  // File upload mutation
+  const uploadFileMutation = useMutation({
+    mutationFn: async ({ files, category }: { files: FileList; category: FileCategory }) => {
+      const formData = new FormData();
+      Array.from(files).forEach((file) => {
+        formData.append('files', file);
+      });
+      formData.append('taskId', task.id.toString());
+      formData.append('category', category);
+      
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/files/${task.id}`] });
+      toast({
+        title: "Files uploaded",
+        description: "Files have been uploaded successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error uploading files",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create comment mutation
   const createCommentMutation = useMutation({
-    mutationFn: async (commentData: CommentFormData) => {
-      return apiRequest('POST', '/api/comments', {
-        ...commentData,
+    mutationFn: async (data: CommentFormData) => {
+      return await apiRequest('POST', '/api/comments', {
+        ...data,
         taskId: task.id,
-        userId: user?.id,
+        userId: user!.id,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/comments/${task.id}`] });
       commentForm.reset();
       toast({
-        title: "Comment added",
+        title: "Comment posted",
         description: "Your comment has been posted successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Comment failed",
+        title: "Error posting comment",
         description: error.message,
         variant: "destructive",
       });
     },
   });
-  const [activeTab, setActiveTab] = useState("details");
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: File[] }>({
-    DRAFT: [],
-    FINAL: [],
-    FEEDBACK: []
-  });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
 
-  // Fetch files for this task
-  const { data: files = [], isLoading: filesLoading } = useQuery<TaskFile[]>({
+  // Fetch files
+  const { data: files = [], isLoading: filesLoading } = useQuery({
     queryKey: [`/api/files/${task.id}`],
-    enabled: isOpen && !!task.id,
+    enabled: isOpen,
   });
 
-  // Fetch comments for this task
-  const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
+  // Fetch comments
+  const { data: comments = [], isLoading: commentsLoading } = useQuery({
     queryKey: [`/api/comments/${task.id}`],
-    enabled: isOpen && !!task.id,
+    enabled: isOpen,
   });
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: task.title,
-      description: task.description || "",
-      deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : "",
-      status: (task.status || TaskStatus.NEW) as string,
-      assignedToId: task.assignedToId,
-    },
-  });
-
+  // Comment form
   const commentForm = useForm<CommentFormData>({
     resolver: zodResolver(commentSchema),
     defaultValues: {
@@ -177,9 +198,9 @@ export function ViewTaskDialog({
     },
   });
 
+  // Helper functions
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
-    if (fileType.includes('text') || fileType.includes('document')) return <FileText className="h-4 w-4" />;
     return <FileIcon className="h-4 w-4" />;
   };
 
@@ -191,139 +212,49 @@ export function ViewTaskDialog({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // File upload mutation
-  const uploadFileMutation = useMutation({
-    mutationFn: async ({ files, category }: { files: File[], category: FileCategory }) => {
-      const uploadPromises = files.map(async (file) => {
-        // Convert file to base64
-        const fileContent = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            // Remove the data URL prefix to get just the base64 content
-            const base64Content = result.split(',')[1];
-            resolve(base64Content);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-
-        return apiRequest('POST', '/api/files', {
-          taskId: task.id,
-          uploadedById: task.assignedToId || 1, // This will be set by the server based on authenticated user
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          fileContent,
-          category,
-        });
-      });
-      return Promise.all(uploadPromises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/files/${task.id}`] });
-      setUploadingFiles({ DRAFT: [], FINAL: [], FEEDBACK: [] });
-      toast({
-        title: "Files uploaded successfully",
-        description: "Your files have been uploaded to the task",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Categorize files by type
-  const instructionFiles = files.filter(f => f.category === 'INSTRUCTION');
-  const draftFiles = files.filter(f => f.category === 'DRAFT');
-  const finalFiles = files.filter(f => f.category === 'FINAL');
-  const feedbackFiles = files.filter(f => f.category === 'FEEDBACK');
-
-  // File upload handlers
-  const handleFileUpload = (fileList: FileList | null, category: string) => {
-    if (!fileList) return;
-    
-    const filesArray = Array.from(fileList);
-    
-    // Validate file sizes
-    const validFiles = filesArray.filter(file => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: `${file.name} is larger than 10MB`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length > 0) {
-      uploadFileMutation.mutate({ files: validFiles, category: category as FileCategory });
-    }
+  const handleFileUpload = (files: FileList | null, category: FileCategory) => {
+    if (!files || files.length === 0) return;
+    uploadFileMutation.mutate({ files, category });
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
+  // Permission checks
+  const canComment = user && (
+    user.role === UserRole.SUPERADMIN ||
+    user.role === UserRole.SALES ||
+    user.role === UserRole.TEAM_LEAD ||
+    (task.assignedToId && user.id === task.assignedToId)
+  );
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
+  const canUploadInstructions = user && (
+    user.role === UserRole.SUPERADMIN ||
+    user.role === UserRole.SALES ||
+    user.role === UserRole.TEAM_LEAD
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent, category: string) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    handleFileUpload(e.dataTransfer.files, category);
-  }, []);
-
-  // Check user permissions for file uploads
-  const canUploadInstructions = user?.role === UserRole.SUPERADMIN || 
-                               user?.role === UserRole.SALES ||
-                               user?.role === UserRole.TEAM_LEAD;
-  const canUploadDrafts = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER) && user?.role !== UserRole.SALES;
-  const canUploadFinal = task.assignedToId === assignedUser?.id && (assignedUser?.role === UserRole.WRITER) && user?.role !== UserRole.SALES;
-  const canUploadFeedback = (user?.role === UserRole.SUPERADMIN ||
-                           user?.role === UserRole.TEAM_LEAD ||
-                           user?.role === UserRole.PROOFREADER);
-  
-  // Check permissions for file deletion/management
-  const canManageFiles = user?.role === UserRole.SUPERADMIN || 
-                        user?.role === UserRole.TEAM_LEAD ||
-                        (task.assignedToId === user?.id && 
-                         (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER));
-
-  // Comment permissions: Sales, Team Lead, Assigned Writer, Superadmin can comment
-  const canComment = user?.role === UserRole.SUPERADMIN || 
-                    user?.role === UserRole.SALES || 
-                    user?.role === UserRole.TEAM_LEAD || 
-                    user?.id === task.assignedToId;
-
-  // Special permission for sales to delete instruction files they uploaded
-  const canDeleteInstructionFiles = (file: any) => {
-    if (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.TEAM_LEAD) return true;
-    if (user?.role === UserRole.SALES && file.category === 'INSTRUCTION') return true;
-    if (task.assignedToId === user?.id && 
-        (user?.role === UserRole.WRITER || user?.role === UserRole.PROOFREADER)) return true;
-    return false;
+  const canDeleteInstructionFiles = (file: TaskFile) => {
+    return user && (
+      user.role === UserRole.SUPERADMIN ||
+      user.role === UserRole.SALES ||
+      user.role === UserRole.TEAM_LEAD ||
+      file.uploadedById === user.id
+    );
   };
+
+  // Filter files by category
+  const instructionFiles = files.filter((f: TaskFile) => f.category === FileCategory.INSTRUCTION);
+  const draftFiles = files.filter((f: TaskFile) => f.category === FileCategory.DRAFT);
+  const finalFiles = files.filter((f: TaskFile) => f.category === FileCategory.FINAL);
+  const feedbackFiles = files.filter((f: TaskFile) => f.category === FileCategory.FEEDBACK);
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     try {
       setIsSubmitting(true);
+      
       if (onUpdateTask) {
         await onUpdateTask(task.id, { status: newStatus });
-        // Force refresh all task queries to ensure consistency across all views
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       }
       
-      // Show celebration animation for completed tasks
       if (newStatus === TaskStatus.COMPLETED) {
         setShowCelebration(true);
       }
@@ -343,38 +274,7 @@ export function ViewTaskDialog({
     }
   };
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      setIsSubmitting(true);
-      
-      if (onUpdateTask) {
-        const updateData = {
-          ...data,
-          deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
-        };
-        await onUpdateTask(task.id, updateData);
-        // Force refresh all task queries to ensure consistency across all views
-        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      }
-
-      toast({
-        title: "Task updated",
-        description: "Task has been updated successfully",
-      });
-
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Error updating task",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const canEdit = true; // For now, allow all users to edit
+  const canEdit = true;
 
   const handleCommentSubmit = async (data: CommentFormData) => {
     if (!user) return;
@@ -383,11 +283,11 @@ export function ViewTaskDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[800px] lg:max-w-[1000px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 p-6 pb-2">
           <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl font-semibold">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-xl font-semibold truncate">
                 {task.title}
               </DialogTitle>
               <p className="text-sm text-gray-500 mt-1">
@@ -402,7 +302,7 @@ export function ViewTaskDialog({
 
         <Separator className="flex-shrink-0" />
 
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col p-6 pt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
               <TabsTrigger value="details">Details</TabsTrigger>
@@ -410,519 +310,230 @@ export function ViewTaskDialog({
               <TabsTrigger value="comments">Comments</TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 min-h-0 mt-4">
-              <ScrollArea className="h-full">
-                <TabsContent value="details" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <UserIcon className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Assigned to:</span>
-                    {assignedUser ? (
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
-                            {getInitials(assignedUser.fullName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{assignedUser.fullName}</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">Unassigned</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CalendarDays className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Due date:</span>
-                    {task.deadline ? (
-                      <div className="flex flex-col">
-                        <span>{formatDate(task.deadline)}</span>
-                        <span className="text-xs text-gray-500">
-                          {getDaysRemaining(task.deadline)}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No deadline</span>
-                    )}
-                  </div>
-                </div>
-
-                {task.wordCount && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Hash className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">Word count:</span>
-                      <span>{task.wordCount} words</span>
-                    </div>
-                  </div>
-                )}
-
-                {task.clientName && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <UserIcon className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">Client:</span>
-                      <span>{task.clientName}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Created:</span>
-                    <span>{task.createdAt ? formatDateTime(task.createdAt) : 'Unknown'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description:</label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {task.description || "No description provided"}
-                  </p>
-                </div>
-              </div>
-
-              {canEdit && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Update Status:</label>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.values(TaskStatus).map((status) => (
-                      <Button
-                        key={status}
-                        size="sm"
-                        variant={(task.status || TaskStatus.NEW) === status ? "default" : "outline"}
-                        onClick={() => handleStatusChange(status as TaskStatus)}
-                        disabled={isSubmitting || (task.status || TaskStatus.NEW) === status}
-                      >
-                        {status.replace('_', ' ')}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="files" className="space-y-6">
-              {filesLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading files...</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Instruction Files Section */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <h4 className="text-sm font-medium">Instruction Files ({instructionFiles.length})</h4>
-                      </div>
-                      {canUploadInstructions && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'INSTRUCTION');
-                            input.click();
-                          }}
-                          disabled={uploadFileMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Upload Instructions
-                        </Button>
-                      )}
-                    </div>
-                    {instructionFiles.length > 0 ? (
+            <div className="flex-1 min-h-0 mt-4 overflow-hidden">
+              <div className="h-full overflow-x-auto overflow-y-auto">
+                <TabsContent value="details" className="space-y-4 p-1">
+                  <div className="min-w-[600px] space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        {instructionFiles.map((file) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
-                          >
-                            <div className="h-8 w-8 bg-blue-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.fileType)}
+                        <div className="flex items-center gap-2 text-sm flex-wrap">
+                          <UserIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">Assigned to:</span>
+                          {assignedUser ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(assignedUser.fullName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">{assignedUser.fullName}</span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-blue-600 hover:bg-blue-100"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = `/api/files/download/${file.id}`;
-                                  link.download = file.fileName;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              {canDeleteInstructionFiles(file) && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => deleteFileMutation.mutate(file.id)}
-                                  disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No instruction files</p>
-                    )}
-                  </div>
-
-                  {/* Draft Files Section - Writers can upload */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-yellow-600" />
-                        <h4 className="text-sm font-medium">Draft Files ({draftFiles.length})</h4>
-                      </div>
-                      {canUploadDrafts && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'DRAFT');
-                            input.click();
-                          }}
-                          disabled={uploadFileMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Upload Draft
-                        </Button>
-                      )}
-                    </div>
-                    {draftFiles.length > 0 ? (
-                      <div className="space-y-2">
-                        {draftFiles.map((file) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
-                          >
-                            <div className="h-8 w-8 bg-yellow-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.fileType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-yellow-600 hover:bg-yellow-100"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = `/api/files/download/${file.id}`;
-                                  link.download = file.fileName;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              {canManageFiles && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => deleteFileMutation.mutate(file.id)}
-                                  disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No draft files uploaded yet</p>
-                    )}
-                  </div>
-
-                  {/* Final Files Section - Writers can upload */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-green-600" />
-                        <h4 className="text-sm font-medium">Final Submission ({finalFiles.length})</h4>
-                      </div>
-                      {canUploadFinal && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'FINAL');
-                            input.click();
-                          }}
-                          disabled={uploadFileMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Upload Final
-                        </Button>
-                      )}
-                    </div>
-                    {finalFiles.length > 0 ? (
-                      <div className="space-y-2">
-                        {finalFiles.map((file) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200"
-                          >
-                            <div className="h-8 w-8 bg-green-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.fileType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-green-600 hover:bg-green-100"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = `/api/files/download/${file.id}`;
-                                  link.download = file.fileName;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              {canManageFiles && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => deleteFileMutation.mutate(file.id)}
-                                  disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No final files submitted yet</p>
-                    )}
-                  </div>
-
-                  {/* Feedback Files Section - Proofreaders can upload */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-purple-600" />
-                        <h4 className="text-sm font-medium">Feedback Files ({feedbackFiles.length})</h4>
-                      </div>
-                      {canUploadFeedback && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.multiple = true;
-                            input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files, 'FEEDBACK');
-                            input.click();
-                          }}
-                          disabled={uploadFileMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Upload Feedback
-                        </Button>
-                      )}
-                    </div>
-                    {feedbackFiles.length > 0 ? (
-                      <div className="space-y-2">
-                        {feedbackFiles.map((file) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200"
-                          >
-                            <div className="h-8 w-8 bg-purple-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.fileType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-purple-600 hover:bg-purple-100"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = `/api/files/download/${file.id}`;
-                                  link.download = file.fileName;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              {canManageFiles && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => deleteFileMutation.mutate(file.id)}
-                                  disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No feedback files uploaded yet</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="comments" className="space-y-4">
-              <div className="flex flex-col h-[400px]">
-                <div className="flex-1 overflow-y-auto mb-4">
-                  {commentsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    </div>
-                  ) : comments.length > 0 ? (
-                    <div className="space-y-4">
-                      {comments.map((comment) => {
-                        const commentUser = users.find(u => u.id === comment.userId);
-                        return (
-                          <div key={comment.id} className="flex gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {commentUser ? getInitials(commentUser.fullName) : 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-medium text-sm">
-                                  {commentUser?.fullName || 'Unknown User'}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {formatDateTime(comment.createdAt!)}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                {comment.content}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No comments yet</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Be the first to comment on this task
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {canComment && (
-                  <div className="border-t pt-4">
-                    <Form {...commentForm}>
-                      <form onSubmit={commentForm.handleSubmit(handleCommentSubmit)} className="space-y-4">
-                        <FormField
-                          control={commentForm.control}
-                          name="content"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Write a comment..."
-                                  className="min-h-[80px] resize-none"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
+                          ) : (
+                            <span className="text-gray-500">Unassigned</span>
                           )}
-                        />
-                        <div className="flex justify-end">
-                          <Button 
-                            type="submit" 
-                            disabled={createCommentMutation.isPending}
-                            className="flex items-center gap-2"
-                          >
-                            <Send className="h-4 w-4" />
-                            {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
-                          </Button>
                         </div>
-                      </form>
-                    </Form>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm flex-wrap">
+                          <CalendarDays className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">Due date:</span>
+                          {task.deadline ? (
+                            <div className="flex flex-col">
+                              <span>{formatDate(task.deadline)}</span>
+                              <span className="text-xs text-gray-500">
+                                {getDaysRemaining(task.deadline)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">No deadline</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {task.wordCount && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm flex-wrap">
+                            <Hash className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <span className="font-medium">Word count:</span>
+                            <span>{task.wordCount} words</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {task.clientName && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm flex-wrap">
+                            <UserIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <span className="font-medium">Client:</span>
+                            <span className="truncate">{task.clientName}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm flex-wrap">
+                          <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">Created:</span>
+                          <span>{task.createdAt ? formatDateTime(task.createdAt) : 'Unknown'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Description:</label>
+                      <div className="p-3 bg-gray-50 rounded-md min-h-[100px] max-h-[200px] overflow-y-auto">
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {task.description || "No description provided"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {canEdit && (
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium">Update Status:</label>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.values(TaskStatus).map((status) => (
+                            <Button
+                              key={status}
+                              size="sm"
+                              variant={(task.status || TaskStatus.NEW) === status ? "default" : "outline"}
+                              onClick={() => handleStatusChange(status as TaskStatus)}
+                              disabled={isSubmitting || (task.status || TaskStatus.NEW) === status}
+                            >
+                              {status.replace('_', ' ')}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-                
-                {!canComment && (
-                  <div className="border-t pt-4 text-center">
-                    <p className="text-sm text-gray-500">
-                      You need appropriate permissions to comment on this task
-                    </p>
-                  </div>
-                )}
-              </div>
                 </TabsContent>
-              </ScrollArea>
+
+                <TabsContent value="files" className="space-y-6 p-1">
+                  <div className="min-w-[600px] space-y-6">
+                    {filesLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading files...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="text-center py-8">
+                          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                          <p className="text-gray-500">Files feature coming soon</p>
+                          <p className="text-sm text-gray-400">File upload and management will be available here</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="comments" className="space-y-6 p-1">
+                  <div className="min-w-[600px] space-y-6">
+                    {commentsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading comments...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <MessageCircle className="h-5 w-5 text-gray-500" />
+                          <h3 className="text-lg font-medium">Comments ({comments?.length || 0})</h3>
+                        </div>
+
+                        {comments && comments.length > 0 ? (
+                          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                            {comments.map((comment: Comment) => {
+                              const commentUser = users.find(u => u.id === comment.userId);
+                              return (
+                                <div key={comment.id} className="border-b pb-4 last:border-b-0">
+                                  <div className="flex items-start gap-3">
+                                    <Avatar className="h-8 w-8 flex-shrink-0">
+                                      <AvatarFallback className="text-xs">
+                                        {commentUser ? getInitials(commentUser.fullName) : '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium text-sm truncate">
+                                          {commentUser?.fullName || 'Unknown User'}
+                                        </span>
+                                        <span className="text-xs text-gray-500 flex-shrink-0">
+                                          {comment.createdAt ? formatDateTime(comment.createdAt) : ''}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                        {comment.content}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500">No comments yet</p>
+                            <p className="text-sm text-gray-400">Be the first to comment on this task</p>
+                          </div>
+                        )}
+
+                        {canComment && (
+                          <div className="border-t pt-4">
+                            <Form {...commentForm}>
+                              <form onSubmit={commentForm.handleSubmit(handleCommentSubmit)} className="space-y-3">
+                                <FormField
+                                  control={commentForm.control}
+                                  name="content"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Add a comment</FormLabel>
+                                      <FormControl>
+                                        <Textarea 
+                                          placeholder="Type your comment here..." 
+                                          className="min-h-[80px] resize-vertical"
+                                          {...field} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="flex justify-end">
+                                  <Button 
+                                    type="submit" 
+                                    disabled={createCommentMutation.isPending}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                    {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          </div>
+                        )}
+                        
+                        {!canComment && (
+                          <div className="border-t pt-4 text-center">
+                            <p className="text-sm text-gray-500">
+                              You need appropriate permissions to comment on this task
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </div>
             </div>
           </Tabs>
         </div>
 
-        <DialogFooter className="flex-shrink-0">
+        <DialogFooter className="flex-shrink-0 p-6 pt-2">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
