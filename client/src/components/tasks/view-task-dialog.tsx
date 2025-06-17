@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Task, TaskStatus, User, UserRole, File as TaskFile, FileCategory } from "@shared/schema";
+import { Task, TaskStatus, User, UserRole, File as TaskFile, FileCategory, Comment } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +46,9 @@ import {
   Image,
   File as FileIcon,
   X,
-  Plus
+  Plus,
+  Send,
+  MessageCircle
 } from "lucide-react";
 import { formatDate, formatDateTime, getDaysRemaining, getInitials, getStatusColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
