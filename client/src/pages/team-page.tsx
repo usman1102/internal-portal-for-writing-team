@@ -986,17 +986,16 @@ export default function TeamPage() {
       
       {/* Add Team Member Dialog */}
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>
               Create a new account for a team member
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <Form {...form}>
-              <form id="add-member-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-1">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -1119,26 +1118,23 @@ export default function TeamPage() {
                 />
               )}
               
-              </form>
-            </Form>
-          </div>
-          
-          <DialogFooter className="flex-shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsAddMemberOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              form="add-member-form"
-              disabled={addMemberMutation.isPending}
-            >
-              {addMemberMutation.isPending ? "Adding..." : "Add Member"}
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddMemberOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={addMemberMutation.isPending}
+                >
+                  {addMemberMutation.isPending ? "Adding..." : "Add Member"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
       
@@ -1226,8 +1222,8 @@ export default function TeamPage() {
                           {getUserTasks(selectedUser.id).map(task => (
                             <li key={task.id} className="flex justify-between border-b pb-2">
                               <span className="text-sm">{task.title}</span>
-                              <Badge className={getStatusColor(task.status as string || 'NEW')}>
-                                {(task.status as string || 'NEW').replace('_', ' ')}
+                              <Badge className={getStatusColor(task.status)}>
+                                {task.status.replace('_', ' ')}
                               </Badge>
                             </li>
                           ))}
@@ -1436,17 +1432,16 @@ export default function TeamPage() {
 
       {/* Edit Team Member Dialog */}
       <Dialog open={isEditMemberOpen} onOpenChange={setIsEditMemberOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>Edit Team Member</DialogTitle>
             <DialogDescription>
               Update team member information
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <Form {...editForm}>
-              <form id="edit-member-form" onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 p-1">
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
               <FormField
                 control={editForm.control}
                 name="username"
@@ -1597,26 +1592,23 @@ export default function TeamPage() {
                 )}
               />
               
-              </form>
-            </Form>
-          </div>
-          
-          <DialogFooter className="flex-shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditMemberOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              form="edit-member-form"
-              disabled={updateUserMutation.isPending}
-            >
-              {updateUserMutation.isPending ? "Updating..." : "Update Member"}
-            </Button>
-          </DialogFooter>
+              <DialogFooter className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditMemberOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={updateUserMutation.isPending}
+                >
+                  {updateUserMutation.isPending ? "Updating..." : "Update Member"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
