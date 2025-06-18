@@ -99,9 +99,11 @@ export function TaskTable({
     // Filter by status
     const statusMatch = statusFilter === "ALL" || task.status === statusFilter;
     
-    // Filter by search query (client name)
+    // Filter by search query (client name, task ID, or task title)
     const searchMatch = searchQuery === "" || 
-      task.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
+      task.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.id.toString().includes(searchQuery) ||
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase());
     
     return statusMatch && searchMatch;
   });
@@ -152,10 +154,10 @@ export function TaskTable({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search by client name..."
+              placeholder="Search by client, ID, or title..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10 w-[200px]"
+              className="pl-10 w-[220px]"
             />
           </div>
           
