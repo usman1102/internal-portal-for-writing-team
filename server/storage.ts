@@ -142,7 +142,7 @@ export class MemStorage implements IStorage {
       username: 'superadmin',
       password: hashedPassword,
       fullName: 'Super Administrator',
-      email: 'superadmin@writepro.com',
+      email: 'superadmin@paperslay.com',
       role: UserRole.SUPERADMIN,
       status: 'ACTIVE',
       teamId: null,

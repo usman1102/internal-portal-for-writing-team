@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/");
       toast({
         title: "Registration successful",
-        description: `Welcome to WritePro, ${user.fullName}!`,
+        description: `Welcome to Paper Slay, ${user.fullName}!`,
       });
     },
     onError: (error: Error) => {
