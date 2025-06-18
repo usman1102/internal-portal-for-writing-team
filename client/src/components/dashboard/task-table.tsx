@@ -15,6 +15,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { 
   Pagination, 
   PaginationContent, 
@@ -28,7 +29,7 @@ import { cn, formatDate, getDaysRemaining, getInitials, getStatusColor } from "@
 import { CreateTaskDialog } from "../tasks/create-task-dialog";
 import { ViewTaskDialog } from "../tasks/view-task-dialog";
 import { EditTaskDialog } from "../tasks/edit-task-dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Search } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -59,6 +60,7 @@ export function TaskTable({
   const { user } = useAuth();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -92,10 +94,17 @@ export function TaskTable({
   
   const ITEMS_PER_PAGE = 5;
   
-  // Filter tasks by status
-  const filteredTasks = statusFilter === "ALL"
-    ? tasks
-    : tasks.filter(task => task.status === statusFilter);
+  // Filter tasks by status and search query
+  const filteredTasks = tasks.filter(task => {
+    // Filter by status
+    const statusMatch = statusFilter === "ALL" || task.status === statusFilter;
+    
+    // Filter by search query (client name)
+    const searchMatch = searchQuery === "" || 
+      task.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return statusMatch && searchMatch;
+  });
   
   // Paginate tasks
   const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
@@ -112,6 +121,11 @@ export function TaskTable({
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value);
     setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when search changes
   };
   
   const handlePageChange = (page: number) => {
@@ -134,7 +148,17 @@ export function TaskTable({
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
         <h3 className="text-lg font-medium text-gray-800 font-heading">{title}</h3>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by client name..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10 w-[200px]"
+            />
+          </div>
+          
           <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
