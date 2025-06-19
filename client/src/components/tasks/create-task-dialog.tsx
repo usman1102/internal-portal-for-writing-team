@@ -171,15 +171,39 @@ export function CreateTaskDialog({
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      // Convert files to base64 for upload
+      const filesWithContent = await Promise.all(
+        uploadedFiles.map(async (uploadedFile) => {
+          const fileContent = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as ArrayBuffer;
+              const bytes = new Uint8Array(result);
+              let binary = '';
+              for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+              }
+              const base64Content = btoa(binary);
+              resolve(base64Content);
+            };
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(uploadedFile.file);
+          });
+
+          return {
+            name: uploadedFile.file.name,
+            size: uploadedFile.file.size,
+            type: uploadedFile.file.type,
+            content: fileContent,
+          };
+        })
+      );
+
       // Format the data before submitting
       const taskData = {
         ...data,
         deadline: data.deadline ? data.deadline.toISOString() : undefined,
-        files: uploadedFiles.map(f => ({
-          name: f.file.name,
-          size: f.file.size,
-          type: f.file.type,
-        })),
+        files: filesWithContent,
       };
 
       // Call the onCreateTask callback if provided

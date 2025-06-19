@@ -303,14 +303,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (files && Array.isArray(files) && files.length > 0) {
         for (const fileInfo of files) {
           try {
-            // Create file record in database
+            // Create file record in database with actual content
             await storage.createFile({
               taskId: task.id,
               uploadedById: req.user.id,
               fileName: fileInfo.name,
               fileSize: fileInfo.size,
               fileType: fileInfo.type,
-              fileContent: `placeholder-content-${fileInfo.name}`, // This will be updated when we implement proper file upload
+              fileContent: fileInfo.content, // Use actual base64 content
               category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
               isSubmission: false
             });
