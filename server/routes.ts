@@ -816,6 +816,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix corrupted files - diagnostic endpoint
+  app.post("/api/fix-corrupted-files", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      // Only superadmin can run this fix
+      if (req.user?.role !== UserRole.SUPERADMIN) {
+        return res.status(403).send("Only superadmin can run this fix");
+      }
+      
+      const allTasks = await storage.getAllTasks();
+      const corruptedFiles = [];
+      const deletedFiles = [];
+      let totalFilesChecked = 0;
+      
+      for (const task of allTasks) {
+        const files = await storage.getFilesByTask(task.id);
+        
+        for (const file of files) {
+          totalFilesChecked++;
+          
+          if (!file.fileContent) {
+            corruptedFiles.push({
+              id: file.id,
+              fileName: file.fileName,
+              taskId: file.taskId,
+              issue: 'Missing file content'
+            });
+            continue;
+          }
+          
+          let base64Content = file.fileContent;
+          
+          // Handle different base64 formats
+          if (base64Content.startsWith('data:')) {
+            const commaIndex = base64Content.indexOf(',');
+            if (commaIndex !== -1) {
+              base64Content = base64Content.substring(commaIndex + 1);
+            }
+          }
+          
+          // Clean up the base64 string
+          base64Content = base64Content.replace(/\s/g, '');
+          
+          // Validate base64 format
+          if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content)) {
+            corruptedFiles.push({
+              id: file.id,
+              fileName: file.fileName,
+              taskId: file.taskId,
+              issue: 'Invalid base64 format',
+              contentPreview: file.fileContent.substring(0, 100)
+            });
+            
+            // Delete the corrupted file
+            try {
+              await storage.deleteFile(file.id);
+              deletedFiles.push({
+                id: file.id,
+                fileName: file.fileName,
+                taskId: file.taskId
+              });
+            } catch (deleteError) {
+              console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
+            }
+            continue;
+          }
+          
+          // Try to decode to verify integrity
+          try {
+            const fileBuffer = Buffer.from(base64Content, 'base64');
+            if (fileBuffer.length === 0) {
+              corruptedFiles.push({
+                id: file.id,
+                fileName: file.fileName,
+                taskId: file.taskId,
+                issue: 'Empty buffer after decoding'
+              });
+              
+              // Delete the corrupted file
+              try {
+                await storage.deleteFile(file.id);
+                deletedFiles.push({
+                  id: file.id,
+                  fileName: file.fileName,
+                  taskId: file.taskId
+                });
+              } catch (deleteError) {
+                console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
+              }
+            }
+          } catch (decodeError) {
+            corruptedFiles.push({
+              id: file.id,
+              fileName: file.fileName,
+              taskId: file.taskId,
+              issue: 'Failed to decode base64',
+              error: decodeError.message
+            });
+            
+            // Delete the corrupted file
+            try {
+              await storage.deleteFile(file.id);
+              deletedFiles.push({
+                id: file.id,
+                fileName: file.fileName,
+                taskId: file.taskId
+              });
+            } catch (deleteError) {
+              console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
+            }
+          }
+        }
+      }
+      
+      res.json({
+        message: "File corruption check completed",
+        summary: {
+          totalFilesChecked,
+          corruptedFilesFound: corruptedFiles.length,
+          filesDeleted: deletedFiles.length
+        },
+        corruptedFiles,
+        deletedFiles
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Teams routes
   app.get("/api/teams", async (req, res, next) => {
     try {
