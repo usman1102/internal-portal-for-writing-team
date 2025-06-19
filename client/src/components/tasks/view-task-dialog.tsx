@@ -195,7 +195,7 @@ export function ViewTaskDialog({
   const uploadFileMutation = useMutation({
     mutationFn: async ({ files, category }: { files: File[], category: FileCategory }) => {
       const uploadPromises = files.map(async (file) => {
-        // Convert file to base64 regardless of size
+        // Convert file to base64
         const fileContent = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
@@ -210,6 +210,7 @@ export function ViewTaskDialog({
 
         return apiRequest('POST', '/api/files', {
           taskId: task.id,
+          uploadedById: task.assignedToId || 1, // This will be set by the server based on authenticated user
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,

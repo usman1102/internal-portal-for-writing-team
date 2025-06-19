@@ -304,9 +304,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const fileInfo of files) {
           try {
             // Create file record in database
-            // Skip creating file records during task creation since we don't have actual file content
-            // Files will be uploaded separately through the task view interface
-            console.log(`Skipping file creation for ${fileInfo.name} - will be uploaded separately`);
+            await storage.createFile({
+              taskId: task.id,
+              uploadedById: req.user.id,
+              fileName: fileInfo.name,
+              fileSize: fileInfo.size,
+              fileType: fileInfo.type,
+              fileContent: `placeholder-content-${fileInfo.name}`, // This will be updated when we implement proper file upload
+              category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
+              isSubmission: false
+            });
           } catch (fileError) {
             console.error('Error saving file info:', fileError);
             // Continue with other files even if one fails
@@ -573,11 +580,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Writers can download files for their assigned tasks, plus instruction files for any task
       if (req.user?.role === 'WRITER' && task.assignedToId !== req.user.id && file.category !== 'INSTRUCTION') {
         return res.status(403).send("Unauthorized to download files for this task");
-      }
-      
-      // Check if file has placeholder content
-      if (file.fileContent.startsWith('placeholder-content-') || file.fileContent.startsWith('large-file-placeholder-')) {
-        return res.status(404).send("File content not available - file was uploaded as placeholder only");
       }
       
       // Decode base64 content
