@@ -128,7 +128,7 @@ export function CreateTaskDialog({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-
+    
     if (e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
@@ -169,72 +169,17 @@ export function CreateTaskDialog({
     return <File className="h-4 w-4" />;
   };
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      // Create a preview URL for images
-      let preview = null;
-      if (file.type.startsWith('image/')) {
-        preview = URL.createObjectURL(file);
-      }
-
-      const uploadedFile: UploadedFile = {
-        id: Date.now().toString(),
-        file,
-        preview
-      };
-
-      setUploadedFiles(prev => [...prev, uploadedFile]);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
-  };
-
-  // Helper function to convert file to base64
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (reader.result) {
-          const result = reader.result as string;
-          // Get base64 string without data URL prefix
-          const commaIndex = result.indexOf(',');
-          if (commaIndex !== -1) {
-            const base64 = result.substring(commaIndex + 1);
-            // Ensure clean base64 string
-            const cleanBase64 = base64.replace(/\s/g, '');
-            resolve(cleanBase64);
-          } else {
-            reject(new Error('Invalid data URL format'));
-          }
-        } else {
-          reject(new Error('Failed to read file'));
-        }
-      };
-      reader.onerror = () => {
-        reject(new Error('Error reading file'));
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       // Format the data before submitting
       const taskData = {
         ...data,
         deadline: data.deadline ? data.deadline.toISOString() : undefined,
-        files:  await Promise.all(
-        uploadedFiles.map(async (uploadedFile) => {
-          // Convert file to base64
-          const base64Content = await convertFileToBase64(uploadedFile.file);
-          return {
-            name: uploadedFile.file.name,
-            size: uploadedFile.file.size,
-            type: uploadedFile.file.type,
-            content: base64Content
-          };
-        })
-      ),
+        files: uploadedFiles.map(f => ({
+          name: f.file.name,
+          size: f.file.size,
+          type: f.file.type,
+        })),
       };
 
       // Call the onCreateTask callback if provided
@@ -269,7 +214,7 @@ export function CreateTaskDialog({
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
-
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" onPaste={handlePaste}>
             {/* Task Title */}
@@ -387,7 +332,7 @@ export function CreateTaskDialog({
             {/* File Upload Section */}
             <div className="space-y-4">
               <FormLabel>Files (Optional)</FormLabel>
-
+              
               {/* Drag and Drop Area */}
               <div
                 className={cn(
@@ -451,7 +396,7 @@ export function CreateTaskDialog({
                             {getFileIcon(uploadedFile.file.type)}
                           </div>
                         )}
-
+                        
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
                             {uploadedFile.file.name}
@@ -460,7 +405,7 @@ export function CreateTaskDialog({
                             {(uploadedFile.file.size / 1024).toFixed(1)} KB
                           </p>
                         </div>
-
+                        
                         <Button
                           type="button"
                           variant="ghost"

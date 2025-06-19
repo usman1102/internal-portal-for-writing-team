@@ -303,23 +303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (files && Array.isArray(files) && files.length > 0) {
         for (const fileInfo of files) {
           try {
-            // Validate that fileContent is provided as base64
-            if (!fileInfo.content) {
-              console.error('File content missing for:', fileInfo.name);
-              continue;
-            }
-            
-            // Create file record in database with proper base64 content
-            await storage.createFile({
-              taskId: task.id,
-              uploadedById: req.user.id,
-              fileName: fileInfo.name,
-              fileSize: fileInfo.size,
-              fileType: fileInfo.type,
-              fileContent: fileInfo.content, // Expecting base64 content from frontend
-              category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
-              isSubmission: false
-            });
+            // Create file record in database
+            // Skip creating file records during task creation since we don't have actual file content
+            // Files will be uploaded separately through the task view interface
+            console.log(`Skipping file creation for ${fileInfo.name} - will be uploaded separately`);
           } catch (fileError) {
             console.error('Error saving file info:', fileError);
             // Continue with other files even if one fails
@@ -588,58 +575,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized to download files for this task");
       }
       
-      try {
-        // Validate file content exists
-        if (!file.fileContent) {
-          return res.status(400).send("File content is missing");
-        }
-        
-        let base64Content = file.fileContent;
-        
-        // Handle different base64 formats
-        if (base64Content.startsWith('data:')) {
-          // Remove data URL prefix (data:mime/type;base64,)
-          const commaIndex = base64Content.indexOf(',');
-          if (commaIndex !== -1) {
-            base64Content = base64Content.substring(commaIndex + 1);
-          }
-        }
-        
-        // Clean up the base64 string - remove any whitespace or newlines
-        base64Content = base64Content.replace(/\s/g, '');
-        
-        // Validate base64 format
-        if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content)) {
-          console.error('Invalid base64 format for file:', file.fileName);
-          return res.status(400).send("File content format is invalid");
-        }
-        
-        // Decode base64 content
-        const fileBuffer = Buffer.from(base64Content, 'base64');
-        
-        // Validate decoded buffer
-        if (fileBuffer.length === 0) {
-          console.error('Empty buffer after decoding for file:', file.fileName);
-          return res.status(400).send("File content is corrupted or empty");
-        }
-        
-        console.log(`Downloading file: ${file.fileName}, size: ${fileBuffer.length} bytes, original base64 length: ${base64Content.length}`);
-        
-        // Set appropriate headers for download
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.fileName)}"`);
-        res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
-        res.setHeader('Content-Length', fileBuffer.length.toString());
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        
-        // Send the file buffer
-        res.end(fileBuffer);
-      } catch (decodeError) {
-        console.error('Error decoding file:', decodeError);
-        console.error('File content preview (first 100 chars):', file.fileContent?.substring(0, 100));
-        return res.status(500).send("Error processing file content");
+      // Check if file has placeholder content
+      if (file.fileContent.startsWith('placeholder-content-') || file.fileContent.startsWith('large-file-placeholder-')) {
+        return res.status(404).send("File content not available - file was uploaded as placeholder only");
       }
+      
+      // Decode base64 content
+      const fileBuffer = Buffer.from(file.fileContent, 'base64');
+      
+      // Set appropriate headers
+      res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+      res.setHeader('Content-Type', file.fileType);
+      res.setHeader('Content-Length', fileBuffer.length);
+      
+      // Send the file
+      res.send(fileBuffer);
     } catch (error) {
       next(error);
     }
@@ -811,136 +761,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({ message: "Team leads fixed", fixes });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Fix corrupted files - diagnostic endpoint
-  app.post("/api/fix-corrupted-files", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      // Only superadmin can run this fix
-      if (req.user?.role !== UserRole.SUPERADMIN) {
-        return res.status(403).send("Only superadmin can run this fix");
-      }
-      
-      const allTasks = await storage.getAllTasks();
-      const corruptedFiles = [];
-      const deletedFiles = [];
-      let totalFilesChecked = 0;
-      
-      for (const task of allTasks) {
-        const files = await storage.getFilesByTask(task.id);
-        
-        for (const file of files) {
-          totalFilesChecked++;
-          
-          if (!file.fileContent) {
-            corruptedFiles.push({
-              id: file.id,
-              fileName: file.fileName,
-              taskId: file.taskId,
-              issue: 'Missing file content'
-            });
-            continue;
-          }
-          
-          let base64Content = file.fileContent;
-          
-          // Handle different base64 formats
-          if (base64Content.startsWith('data:')) {
-            const commaIndex = base64Content.indexOf(',');
-            if (commaIndex !== -1) {
-              base64Content = base64Content.substring(commaIndex + 1);
-            }
-          }
-          
-          // Clean up the base64 string
-          base64Content = base64Content.replace(/\s/g, '');
-          
-          // Validate base64 format
-          if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content)) {
-            corruptedFiles.push({
-              id: file.id,
-              fileName: file.fileName,
-              taskId: file.taskId,
-              issue: 'Invalid base64 format',
-              contentPreview: file.fileContent.substring(0, 100)
-            });
-            
-            // Delete the corrupted file
-            try {
-              await storage.deleteFile(file.id);
-              deletedFiles.push({
-                id: file.id,
-                fileName: file.fileName,
-                taskId: file.taskId
-              });
-            } catch (deleteError) {
-              console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
-            }
-            continue;
-          }
-          
-          // Try to decode to verify integrity
-          try {
-            const fileBuffer = Buffer.from(base64Content, 'base64');
-            if (fileBuffer.length === 0) {
-              corruptedFiles.push({
-                id: file.id,
-                fileName: file.fileName,
-                taskId: file.taskId,
-                issue: 'Empty buffer after decoding'
-              });
-              
-              // Delete the corrupted file
-              try {
-                await storage.deleteFile(file.id);
-                deletedFiles.push({
-                  id: file.id,
-                  fileName: file.fileName,
-                  taskId: file.taskId
-                });
-              } catch (deleteError) {
-                console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
-              }
-            }
-          } catch (decodeError) {
-            corruptedFiles.push({
-              id: file.id,
-              fileName: file.fileName,
-              taskId: file.taskId,
-              issue: 'Failed to decode base64',
-              error: decodeError.message
-            });
-            
-            // Delete the corrupted file
-            try {
-              await storage.deleteFile(file.id);
-              deletedFiles.push({
-                id: file.id,
-                fileName: file.fileName,
-                taskId: file.taskId
-              });
-            } catch (deleteError) {
-              console.error(`Failed to delete corrupted file ${file.id}:`, deleteError);
-            }
-          }
-        }
-      }
-      
-      res.json({
-        message: "File corruption check completed",
-        summary: {
-          totalFilesChecked,
-          corruptedFilesFound: corruptedFiles.length,
-          filesDeleted: deletedFiles.length
-        },
-        corruptedFiles,
-        deletedFiles
-      });
     } catch (error) {
       next(error);
     }
