@@ -199,13 +199,18 @@ export function ViewTaskDialog({
         const fileContent = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
-            const result = reader.result as string;
-            // Remove the data URL prefix to get just the base64 content
-            const base64Content = result.split(',')[1];
+            const result = reader.result as ArrayBuffer;
+            // Convert ArrayBuffer to base64
+            const bytes = new Uint8Array(result);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const base64Content = btoa(binary);
             resolve(base64Content);
           };
           reader.onerror = reject;
-          reader.readAsDataURL(file);
+          reader.readAsArrayBuffer(file);
         });
 
         return apiRequest('POST', '/api/files', {

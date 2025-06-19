@@ -585,13 +585,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Decode base64 content
       const fileBuffer = Buffer.from(file.fileContent, 'base64');
       
-      // Set appropriate headers
-      res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
-      res.setHeader('Content-Type', file.fileType);
-      res.setHeader('Content-Length', fileBuffer.length);
+      // Set appropriate headers for file download
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.fileName)}"`);
+      res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
+      res.setHeader('Content-Length', fileBuffer.length.toString());
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
-      // Send the file
-      res.send(fileBuffer);
+      // Send the file buffer
+      res.end(fileBuffer);
     } catch (error) {
       next(error);
     }
