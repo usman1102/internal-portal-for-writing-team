@@ -303,14 +303,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (files && Array.isArray(files) && files.length > 0) {
         for (const fileInfo of files) {
           try {
-            // Create file record in database
+            // Validate that fileContent is provided as base64
+            if (!fileInfo.content) {
+              console.error('File content missing for:', fileInfo.name);
+              continue;
+            }
+            
+            // Create file record in database with proper base64 content
             await storage.createFile({
               taskId: task.id,
               uploadedById: req.user.id,
               fileName: fileInfo.name,
               fileSize: fileInfo.size,
               fileType: fileInfo.type,
-              fileContent: `placeholder-content-${fileInfo.name}`, // This will be updated when we implement proper file upload
+              fileContent: fileInfo.content, // Expecting base64 content from frontend
               category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
               isSubmission: false
             });
@@ -582,16 +588,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized to download files for this task");
       }
       
-      // Decode base64 content
-      const fileBuffer = Buffer.from(file.fileContent, 'base64');
-      
-      // Set appropriate headers
-      res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
-      res.setHeader('Content-Type', file.fileType);
-      res.setHeader('Content-Length', fileBuffer.length);
-      
-      // Send the file
-      res.send(fileBuffer);
+      try {
+        // Validate file content exists
+        if (!file.fileContent) {
+          return res.status(400).send("File content is missing");
+        }
+        
+        // Remove data URL prefix if present (data:mime/type;base64,)
+        let base64Content = file.fileContent;
+        if (base64Content.includes(',')) {
+          base64Content = base64Content.split(',')[1];
+        }
+        
+        // Decode base64 content
+        const fileBuffer = Buffer.from(base64Content, 'base64');
+        
+        // Validate decoded buffer
+        if (fileBuffer.length === 0) {
+          return res.status(400).send("File content is corrupted");
+        }
+        
+        // Set appropriate headers for download
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.fileName)}"`);
+        res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
+        res.setHeader('Content-Length', fileBuffer.length.toString());
+        res.setHeader('Cache-Control', 'no-cache');
+        
+        // Send the file buffer
+        res.send(fileBuffer);
+      } catch (decodeError) {
+        console.error('Error decoding file:', decodeError);
+        return res.status(500).send("Error processing file content");
+      }
     } catch (error) {
       next(error);
     }

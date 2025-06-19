@@ -92,7 +92,15 @@ export function FileUpload({
     }, 100);
 
     try {
-      await onUpload(file);
+      // Convert file to base64
+      const base64Content = await convertFileToBase64(file);
+      
+      // Create file object with base64 content
+      const fileWithContent = Object.assign(file, { 
+        content: base64Content 
+      });
+      
+      await onUpload(fileWithContent);
       setUploadProgress(100);
       setTimeout(() => {
         setUploadProgress(0);
@@ -112,6 +120,26 @@ export function FileUpload({
         variant: "destructive",
       });
     }
+  };
+
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          // Get base64 string without data URL prefix
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to read file'));
+        }
+      };
+      reader.onerror = () => {
+        reject(new Error('Error reading file'));
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const triggerFileInput = () => {
