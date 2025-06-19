@@ -128,9 +128,17 @@ export function FileUpload({
       const reader = new FileReader();
       reader.onload = () => {
         if (reader.result) {
+          const result = reader.result as string;
           // Get base64 string without data URL prefix
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
+          const commaIndex = result.indexOf(',');
+          if (commaIndex !== -1) {
+            const base64 = result.substring(commaIndex + 1);
+            // Ensure clean base64 string
+            const cleanBase64 = base64.replace(/\s/g, '');
+            resolve(cleanBase64);
+          } else {
+            reject(new Error('Invalid data URL format'));
+          }
         } else {
           reject(new Error('Failed to read file'));
         }

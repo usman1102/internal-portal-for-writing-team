@@ -594,10 +594,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("File content is missing");
         }
         
-        // Remove data URL prefix if present (data:mime/type;base64,)
         let base64Content = file.fileContent;
-        if (base64Content.includes(',')) {
-          base64Content = base64Content.split(',')[1];
+        
+        // Handle different base64 formats
+        if (base64Content.startsWith('data:')) {
+          // Remove data URL prefix (data:mime/type;base64,)
+          const commaIndex = base64Content.indexOf(',');
+          if (commaIndex !== -1) {
+            base64Content = base64Content.substring(commaIndex + 1);
+          }
+        }
+        
+        // Clean up the base64 string - remove any whitespace or newlines
+        base64Content = base64Content.replace(/\s/g, '');
+        
+        // Validate base64 format
+        if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content)) {
+          console.error('Invalid base64 format for file:', file.fileName);
+          return res.status(400).send("File content format is invalid");
         }
         
         // Decode base64 content
@@ -605,19 +619,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Validate decoded buffer
         if (fileBuffer.length === 0) {
-          return res.status(400).send("File content is corrupted");
+          console.error('Empty buffer after decoding for file:', file.fileName);
+          return res.status(400).send("File content is corrupted or empty");
         }
+        
+        console.log(`Downloading file: ${file.fileName}, size: ${fileBuffer.length} bytes, original base64 length: ${base64Content.length}`);
         
         // Set appropriate headers for download
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.fileName)}"`);
         res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
         res.setHeader('Content-Length', fileBuffer.length.toString());
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         
         // Send the file buffer
-        res.send(fileBuffer);
+        res.end(fileBuffer);
       } catch (decodeError) {
         console.error('Error decoding file:', decodeError);
+        console.error('File content preview (first 100 chars):', file.fileContent?.substring(0, 100));
         return res.status(500).send("Error processing file content");
       }
     } catch (error) {
