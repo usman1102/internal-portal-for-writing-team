@@ -195,20 +195,7 @@ export function ViewTaskDialog({
   const uploadFileMutation = useMutation({
     mutationFn: async ({ files, category }: { files: File[], category: FileCategory }) => {
       const uploadPromises = files.map(async (file) => {
-        // Check file size - if larger than 1MB, compress or handle differently
-        if (file.size > 1024 * 1024) { // 1MB limit
-          // For now, create a placeholder for large files
-          return apiRequest('POST', '/api/files', {
-            taskId: task.id,
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            fileContent: `large-file-placeholder-${file.name}-${Date.now()}`,
-            category,
-          });
-        }
-        
-        // Convert small files to base64
+        // Convert file to base64 regardless of size
         const fileContent = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
