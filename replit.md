@@ -116,3 +116,9 @@ Changelog:
   - Enhanced install prompt with Android Chrome specific instructions
   - Fixed service worker caching for better offline functionality
   - Added proper meta tags for Android Chrome PWA support
+- June 24, 2025. Rebranded application to "Paper Slay":
+  - Integrated company logo throughout the application
+  - Updated all PWA icons with Paper Slay branding
+  - Changed app name from TaskManager to Paper Slay
+  - Updated loading screen with company logo
+  - Modified favicon and browser tab icons

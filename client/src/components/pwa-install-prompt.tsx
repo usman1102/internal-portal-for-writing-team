@@ -47,7 +47,7 @@ export function PWAInstallPrompt() {
             </Button>
           </div>
           <CardDescription className="text-xs">
-            Install TaskManager for faster access and offline use
+            Install Paper Slay for faster access and offline use
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
@@ -80,7 +80,7 @@ export function PWAInstallPrompt() {
               <span>Install on Android Chrome</span>
             </DialogTitle>
             <DialogDescription>
-              Follow these steps to install TaskManager as an app
+              Follow these steps to install Paper Slay as an app
             </DialogDescription>
           </DialogHeader>
           

@@ -196,7 +196,7 @@ async function handleNavigationRequest(request) {
           <div class="offline-container">
             <div class="offline-icon">📱</div>
             <h1>You're Offline</h1>
-            <p>TaskManager works offline, but some features may be limited.</p>
+            <p>Paper Slay works offline, but some features may be limited.</p>
             <button onclick="window.location.reload()" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Try Again</button>
           </div>
         </body>
