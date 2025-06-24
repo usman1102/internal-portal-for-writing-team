@@ -329,6 +329,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
+
+      // Send notification for task creation
+      await notificationService.notifyTaskCreated(task, req.user);
       
       res.status(201).json(task);
     } catch (error) {
@@ -417,6 +420,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTask = await storage.updateTask(taskId, updateData);
       
+      // Handle notifications for various updates
+      if (req.body.assignedToId !== undefined && req.body.assignedToId !== task.assignedToId) {
+        if (req.body.assignedToId === null) {
+          // Task unassigned
+          await notificationService.notifyTaskUnassigned(updatedTask, req.user);
+        } else {
+          // Task assigned
+          await notificationService.notifyTaskAssigned(updatedTask, req.user);
+        }
+      }
+
       // Create activity entry for status change if that's what was updated
       if (req.body.status && req.body.status !== task.status) {
         let action = 'STATUS_UPDATED';
@@ -431,7 +445,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
+        // Send notification for status change
+        await notificationService.notifyTaskStatusChanged(updatedTask, req.user, task.status, req.body.status);
+      }
 
+      // Check for due date changes
+      if (req.body.deadline && req.body.deadline !== task.deadline) {
+        await notificationService.notifyTaskDueDateChanged(updatedTask, req.user);
       }
       
       res.json(updatedTask);
@@ -507,6 +527,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const file = await storage.createFile(validatedData);
+      
+      // Send notification for file upload
+      await notificationService.notifyFileUploaded(task, req.user);
       
       res.status(201).json(file);
     } catch (error) {
@@ -690,6 +713,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
+
+      // Send notification for comment
+      await notificationService.notifyCommentAdded(task, req.user);
       
       res.status(201).json(comment);
     } catch (error) {

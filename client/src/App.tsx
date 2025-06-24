@@ -14,6 +14,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import { ThemeProvider } from "./hooks/use-theme";
 import { InstallPrompt } from "./components/pwa/install-prompt";
 import { OfflineIndicator } from "./components/pwa/offline-indicator";
+import { NotificationPermissionPrompt } from "./components/notifications/notification-permission-prompt";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function App() {
             <Toaster />
             <Router />
             <InstallPrompt />
+            <NotificationPermissionPrompt />
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>
