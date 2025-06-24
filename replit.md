@@ -122,3 +122,9 @@ Changelog:
   - Changed app name from TaskManager to Paper Slay
   - Updated loading screen with company logo
   - Modified favicon and browser tab icons
+- June 24, 2025. Implemented comprehensive notification system:
+  - Added push notifications for task creation, assignment, status changes, comments, and file uploads
+  - Role-based notification filtering (sales don't see each other's task notifications)
+  - Real-time notification bell with unread count in dashboard header
+  - Browser push notification support with permission management
+  - Service worker integration for offline notification handling

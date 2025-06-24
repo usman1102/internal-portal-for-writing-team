@@ -897,6 +897,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Notification routes
+  app.get("/api/notifications", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notifications = await storage.getNotificationsByUser(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/notifications/unread-count", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const count = await storage.getUnreadNotificationsCount(req.user.id);
+      res.json({ count });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notificationId = parseInt(req.params.id);
+      const notification = await storage.getNotification(notificationId);
+      
+      if (!notification) {
+        return res.status(404).send("Notification not found");
+      }
+      
+      if (notification.userId !== req.user.id) {
+        return res.status(403).send("Unauthorized");
+      }
+      
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

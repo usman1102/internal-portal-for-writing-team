@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -70,7 +69,7 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuHeader className="flex items-center justify-between p-3">
+        <div className="flex items-center justify-between p-3">
           <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
             <Button
@@ -83,7 +82,7 @@ export function NotificationBell() {
               <CheckCheck className="h-4 w-4" />
             </Button>
           )}
-        </DropdownMenuHeader>
+        </div>
         
         <DropdownMenuSeparator />
         

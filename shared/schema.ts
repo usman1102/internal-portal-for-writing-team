@@ -160,6 +160,7 @@ export type Activity = typeof activities.$inferSelect;
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+export type SelectNotification = typeof notifications.$inferSelect;
 
 
 

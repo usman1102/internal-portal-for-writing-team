@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Notification } from "@shared/schema";
+import type { Notification } from "@shared/schema";
 
 export function useNotifications() {
   const queryClient = useQueryClient();
