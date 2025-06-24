@@ -1,6 +1,6 @@
-const CACHE_NAME = 'task-manager-v3';
-const STATIC_CACHE_NAME = 'task-manager-static-v3';
-const DYNAMIC_CACHE_NAME = 'task-manager-dynamic-v3';
+const CACHE_NAME = 'paper-slay-v1';
+const STATIC_CACHE_NAME = 'paper-slay-static-v1';
+const DYNAMIC_CACHE_NAME = 'paper-slay-dynamic-v1';
 
 // Files to cache for offline functionality
 const STATIC_ASSETS = [

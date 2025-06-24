@@ -38,7 +38,7 @@ export function InstallPrompt() {
           
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Install TaskManager
+              Install Paper Slay
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               Get faster access and offline functionality
@@ -91,7 +91,7 @@ export function InstallPrompt() {
               <span>Install on Android Chrome</span>
             </DialogTitle>
             <DialogDescription>
-              Follow these steps to install TaskManager as an app
+              Follow these steps to install Paper Slay as an app
             </DialogDescription>
           </DialogHeader>
           
@@ -133,7 +133,7 @@ export function InstallPrompt() {
               </div>
             ) : (
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p className="mb-2">To install TaskManager as an app:</p>
+                <p className="mb-2">To install Paper Slay as an app:</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Open this site in Chrome on your Android device</li>
                   <li>Use Chrome's menu to select "Add to Home screen"</li>
