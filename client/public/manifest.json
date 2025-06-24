@@ -2,7 +2,7 @@
   "name": "Task Management System",
   "short_name": "TaskManager",
   "description": "Professional task management and collaboration platform",
-  "start_url": "/",
+  "start_url": "/?pwa=true",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",

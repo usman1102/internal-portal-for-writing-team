@@ -9,6 +9,15 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Hide Replit development elements in PWA */
+  iframe[src*="replit"],
+  div[class*="replit"],
+  script[src*="replit"] {
+    display: none !important;
   }
 }
 
@@ -31,6 +40,28 @@
   select,
   textarea {
     font-size: 16px !important;
+    transform: translateZ(0);
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+}
+
+/* Improve rendering performance on mobile */
+.performance-boost {
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize fonts for mobile */
+@media screen and (max-width: 768px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-rendering: optimizeSpeed;
   }
 }
 

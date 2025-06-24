@@ -13,8 +13,91 @@
     
     <!-- Apple specific meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="TaskManager" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    
+    <!-- Prevent flash of unstyled content -->
+    <style>
+      #root { 
+        min-height: 100vh; 
+        background-color: #ffffff;
+      }
+      body { 
+        margin: 0; 
+        padding: 0; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background-color: #ffffff;
+        overflow-x: hidden;
+      }
+      
+      /* Loading screen */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+      
+      .loading-content {
+        text-align: center;
+        color: white;
+      }
+      
+      .loading-logo {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      .loading-text {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      
+      .loading-subtext {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+      
+      /* Hide Replit banner in PWA mode */
+      @media (display-mode: standalone) {
+        iframe[src*="replit"] { 
+          display: none !important; 
+        }
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
+      
+      /* Performance optimizations */
+      * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -31,6 +114,23 @@
     <title>Task Management System</title>
   </head>
   <body>
+    <!-- Loading screen -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-content">
+        <div class="loading-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+            <rect x="6" y="8" width="20" height="2" rx="1"/>
+            <rect x="6" y="12" width="16" height="2" rx="1"/>
+            <rect x="6" y="16" width="18" height="2" rx="1"/>
+            <circle cx="24" cy="22" r="2"/>
+            <path d="M8 22 L12 26 L18 20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="loading-text">TaskManager</div>
+        <div class="loading-subtext">Loading your workspace...</div>
+      </div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->

@@ -1,13 +1,10 @@
-const CACHE_NAME = 'task-manager-v1';
-const STATIC_CACHE_NAME = 'task-manager-static-v1';
-const DYNAMIC_CACHE_NAME = 'task-manager-dynamic-v1';
+const CACHE_NAME = 'task-manager-v2';
+const STATIC_CACHE_NAME = 'task-manager-static-v2';
+const DYNAMIC_CACHE_NAME = 'task-manager-dynamic-v2';
 
 // Files to cache for offline functionality
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
@@ -29,7 +26,12 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS.filter(url => url !== '/'));
+        // Cache only the essential files that actually exist
+        const essentialAssets = ['/manifest.json'];
+        return cache.addAll(essentialAssets).catch(() => {
+          // Continue even if some assets fail to cache
+          console.log('Some assets failed to cache, continuing...');
+        });
       })
       .then(() => self.skipWaiting())
   );
@@ -132,14 +134,66 @@ async function handleApiRequest(request) {
 // Handle navigation requests
 async function handleNavigationRequest(request) {
   try {
-    // Try network first
-    const networkResponse = await fetch(request);
+    // Try network first with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const networkResponse = await fetch(request, { 
+      signal: controller.signal 
+    });
+    clearTimeout(timeoutId);
     return networkResponse;
   } catch (error) {
-    // Network failed, return cached index.html
+    // Network failed, return cached index.html or basic offline page
     const cache = await caches.open(STATIC_CACHE_NAME);
     const cachedResponse = await cache.match('/');
-    return cachedResponse || new Response('Offline', { status: 503 });
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Return a basic offline page
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>TaskManager - Offline</title>
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              text-align: center; 
+              background: #f8fafc;
+            }
+            .offline-container { 
+              max-width: 400px; 
+              margin: 100px auto; 
+              padding: 40px 20px;
+              background: white;
+              border-radius: 12px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .offline-icon { 
+              font-size: 48px; 
+              margin-bottom: 20px; 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="offline-container">
+            <div class="offline-icon">📱</div>
+            <h1>You're Offline</h1>
+            <p>TaskManager works offline, but some features may be limited.</p>
+            <button onclick="window.location.reload()" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Try Again</button>
+          </div>
+        </body>
+      </html>
+    `, {
+      headers: { 'Content-Type': 'text/html' }
+    });
   }
 }
 
