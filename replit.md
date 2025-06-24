@@ -128,3 +128,8 @@ Changelog:
   - Real-time notification bell with unread count in dashboard header
   - Browser push notification support with permission management
   - Service worker integration for offline notification handling
+- June 24, 2025. Restricted PWA installation to mobile devices only:
+  - Removed desktop app installation option per user request
+  - PWA installation prompt now only appears on iOS and Android devices
+  - Desktop users continue using the web portal in browser
+  - Notification system remains intact for all platforms
