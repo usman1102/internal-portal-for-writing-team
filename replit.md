@@ -110,3 +110,9 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - June 24, 2025. Initial setup
+- June 24, 2025. Fixed PWA installation issues for Android Chrome:
+  - Updated manifest.json with proper icon configurations
+  - Created proper PWA icons (192x192, 512x512, apple-touch-icon)
+  - Enhanced install prompt with Android Chrome specific instructions
+  - Fixed service worker caching for better offline functionality
+  - Added proper meta tags for Android Chrome PWA support
