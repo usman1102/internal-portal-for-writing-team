@@ -1,6 +1,6 @@
-const CACHE_NAME = 'task-manager-v2';
-const STATIC_CACHE_NAME = 'task-manager-static-v2';
-const DYNAMIC_CACHE_NAME = 'task-manager-dynamic-v2';
+const CACHE_NAME = 'task-manager-v3';
+const STATIC_CACHE_NAME = 'task-manager-static-v3';
+const DYNAMIC_CACHE_NAME = 'task-manager-dynamic-v3';
 
 // Files to cache for offline functionality
 const STATIC_ASSETS = [
