@@ -87,6 +87,8 @@ export function ViewTaskDialog({
   onUpdateTask,
   users,
 }: ViewTaskDialogProps) {
+  // Find the user who created this task
+  const createdByUser = users.find(user => user.id === task.assignedById);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -421,6 +423,28 @@ export function ViewTaskDialog({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <UserIcon className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Created by:</span>
+                    {createdByUser ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-xs">
+                            {getInitials(createdByUser.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{createdByUser.fullName}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {createdByUser.role}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Unknown</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <UserIcon className="h-4 w-4 text-gray-500" />
                     <span className="font-medium">Assigned to:</span>
                     {assignedUser ? (
                       <div className="flex items-center gap-2">
@@ -430,6 +454,9 @@ export function ViewTaskDialog({
                           </AvatarFallback>
                         </Avatar>
                         <span>{assignedUser.fullName}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {assignedUser.role}
+                        </Badge>
                       </div>
                     ) : (
                       <span className="text-gray-500">Unassigned</span>
