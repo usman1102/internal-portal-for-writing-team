@@ -1,65 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
-import { pwaManager, isPWAInstalled } from '@/utils/pwa';
+import { usePWA } from '@/hooks/use-pwa';
 
 export function InstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const { showInstallPrompt, isInstalled, install, dismissInstallPrompt } = usePWA();
 
-  useEffect(() => {
-    // Check if app is already installed
-    setIsInstalled(isPWAInstalled());
-
-    // Listen for beforeinstallprompt event
-    const handleBeforeInstall = () => {
-      if (!isPWAInstalled()) {
-        setShowPrompt(true);
-      }
-    };
-
-    // Listen for app installation
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setShowPrompt(false);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Show prompt after a delay if conditions are met
-    const timer = setTimeout(() => {
-      if (!isPWAInstalled() && !localStorage.getItem('pwa-prompt-dismissed')) {
-        setShowPrompt(true);
-      }
-    }, 5000);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  const handleInstall = () => {
-    const installEvent = (window as any).deferredPrompt;
-    if (installEvent) {
-      installEvent.prompt();
-    }
-    setShowPrompt(false);
-  };
-
-  const handleDismiss = () => {
-    setShowPrompt(false);
-    localStorage.setItem('pwa-prompt-dismissed', 'true');
-    
-    // Show again after 7 days
-    setTimeout(() => {
-      localStorage.removeItem('pwa-prompt-dismissed');
-    }, 7 * 24 * 60 * 60 * 1000);
-  };
-
-  if (isInstalled || !showPrompt) {
+  if (isInstalled || !showInstallPrompt) {
     return null;
   }
 
@@ -83,7 +30,7 @@ export function InstallPrompt() {
           <div className="flex gap-2 mt-3">
             <Button
               size="sm"
-              onClick={handleInstall}
+              onClick={install}
               className="text-xs h-8"
             >
               <Download className="w-3 h-3 mr-1" />
@@ -92,7 +39,7 @@ export function InstallPrompt() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDismiss}
+              onClick={dismissInstallPrompt}
               className="text-xs h-8"
             >
               Later
@@ -103,7 +50,7 @@ export function InstallPrompt() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleDismiss}
+          onClick={dismissInstallPrompt}
           className="p-1 h-auto"
         >
           <X className="w-4 h-4" />

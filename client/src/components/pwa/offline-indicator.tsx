@@ -1,32 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { WifiOff, Wifi } from 'lucide-react';
-import { isOnline } from '@/utils/pwa';
+import React from 'react';
+import { WifiOff } from 'lucide-react';
+import { usePWA } from '@/hooks/use-pwa';
 
 export function OfflineIndicator() {
-  const [online, setOnline] = useState(isOnline());
-  const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  const { isOnline } = usePWA();
 
-  useEffect(() => {
-    const handleOnline = () => {
-      setOnline(true);
-      setShowOfflineMessage(false);
-    };
-
-    const handleOffline = () => {
-      setOnline(false);
-      setShowOfflineMessage(true);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  if (online) {
+  if (isOnline) {
     return null;
   }
 
