@@ -4,6 +4,7 @@
   "short_name": "Writing Portal",
   "description": "Task management system for freelance writing teams",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
