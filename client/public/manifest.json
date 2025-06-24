@@ -49,7 +49,7 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View dashboard and overview",
-      "url": "/dashboard",
+      "url": "/",
       "icons": [
         {
           "src": "/pwa-192x192.png",
