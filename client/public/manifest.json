@@ -44,6 +44,9 @@
     }
   ],
 
+  "permissions": [
+    "notifications"
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
