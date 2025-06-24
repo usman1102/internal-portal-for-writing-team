@@ -20,6 +20,14 @@ export function usePWA(): PWAHookReturn {
     // Check if we're in a browser environment
     if (typeof window === 'undefined') return;
     
+    // Check if this is a mobile device - ONLY show PWA on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Don't initialize PWA functionality on desktop
+    if (!isMobile) {
+      return;
+    }
+    
     // Check if app is installed
     const checkInstalled = () => {
       return window.matchMedia('(display-mode: standalone)').matches ||
@@ -91,12 +99,17 @@ export function usePWA(): PWAHookReturn {
     }, 7 * 24 * 60 * 60 * 1000);
   };
 
+  // Additional mobile check for return values
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
   return {
-    isInstallable,
+    isInstallable: isInstallable && isMobileDevice(),
     isInstalled,
     isOnline,
     install,
-    showInstallPrompt,
+    showInstallPrompt: showInstallPrompt && isMobileDevice(),
     dismissInstallPrompt,
   };
 }
