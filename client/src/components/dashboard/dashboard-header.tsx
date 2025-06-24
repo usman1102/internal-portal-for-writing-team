@@ -6,7 +6,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 
 
 interface DashboardHeaderProps {
@@ -30,17 +29,13 @@ export function DashboardHeader({
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center space-x-3">
-            <img src="/logo.png" alt="Paper Slay" className="h-8 w-8 rounded-lg" />
-            <h2 className="text-xl font-semibold text-gray-800 font-heading">
-              {title}
-            </h2>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-800 font-heading">
+            {title}
+          </h2>
         </div>
 
         <div className="flex items-center space-x-4">
-          <NotificationBell />
-          
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

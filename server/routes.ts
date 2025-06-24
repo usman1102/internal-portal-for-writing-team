@@ -2,8 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { notificationService } from "./notifications";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole, TaskStatus } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 
@@ -329,9 +328,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
-
-      // Send notification for task creation
-      await notificationService.notifyTaskCreated(task, req.user);
       
       res.status(201).json(task);
     } catch (error) {
@@ -420,17 +416,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTask = await storage.updateTask(taskId, updateData);
       
-      // Handle notifications for various updates
-      if (req.body.assignedToId !== undefined && req.body.assignedToId !== task.assignedToId) {
-        if (req.body.assignedToId === null) {
-          // Task unassigned
-          await notificationService.notifyTaskUnassigned(updatedTask, req.user);
-        } else {
-          // Task assigned
-          await notificationService.notifyTaskAssigned(updatedTask, req.user);
-        }
-      }
-
       // Create activity entry for status change if that's what was updated
       if (req.body.status && req.body.status !== task.status) {
         let action = 'STATUS_UPDATED';
@@ -445,13 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
-        // Send notification for status change
-        await notificationService.notifyTaskStatusChanged(updatedTask, req.user, task.status, req.body.status);
-      }
 
-      // Check for due date changes
-      if (req.body.deadline && req.body.deadline !== task.deadline) {
-        await notificationService.notifyTaskDueDateChanged(updatedTask, req.user);
       }
       
       res.json(updatedTask);
@@ -527,9 +506,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const file = await storage.createFile(validatedData);
-      
-      // Send notification for file upload
-      await notificationService.notifyFileUploaded(task, req.user);
       
       res.status(201).json(file);
     } catch (error) {
@@ -713,9 +689,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
-
-      // Send notification for comment
-      await notificationService.notifyCommentAdded(task, req.user);
       
       res.status(201).json(comment);
     } catch (error) {
@@ -896,62 +869,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-
-  // Notification routes
-  app.get("/api/notifications", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notifications = await storage.getNotificationsByUser(req.user.id);
-      res.json(notifications);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get("/api/notifications/unread-count", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const count = await storage.getUnreadNotificationsCount(req.user.id);
-      res.json({ count });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/:id/read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notificationId = parseInt(req.params.id);
-      const notification = await storage.getNotification(notificationId);
-      
-      if (!notification) {
-        return res.status(404).send("Notification not found");
-      }
-      
-      if (notification.userId !== req.user.id) {
-        return res.status(403).send("Unauthorized");
-      }
-      
-      await storage.markNotificationAsRead(notificationId);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      await storage.markAllNotificationsAsRead(req.user.id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
 
   const httpServer = createServer(app);
 

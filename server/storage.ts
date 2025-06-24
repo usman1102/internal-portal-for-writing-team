@@ -16,8 +16,7 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
-  type Notification,
-  type InsertNotification,
+
   type Team,
   type InsertTeam,
   UserRole,
@@ -72,14 +71,6 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 
-  // Notification methods
-  getNotification(id: number): Promise<Notification | undefined>;
-  getNotificationsByUser(userId: number): Promise<Notification[]>;
-  getUnreadNotificationsCount(userId: number): Promise<number>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<void>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
-
 
 
   // Team methods
@@ -89,14 +80,6 @@ export interface IStorage {
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: number, teamData: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: number): Promise<void>;
-
-  // Notification methods
-  getNotification(id: number): Promise<Notification | undefined>;
-  getNotificationsByUser(userId: number): Promise<Notification[]>;
-  getUnreadNotificationsCount(userId: number): Promise<number>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<void>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
 
   // Session store
   sessionStore: session.Store;
@@ -109,7 +92,7 @@ export class MemStorage implements IStorage {
   private filesData: Map<number, File>;
   private commentsData: Map<number, Comment>;
   private activitiesData: Map<number, Activity>;
-  private notificationsData: Map<number, Notification>;
+
   private teamsData: Map<number, Team>;
   sessionStore: session.Store;
   
@@ -118,7 +101,7 @@ export class MemStorage implements IStorage {
   private fileIdCounter: number;
   private commentIdCounter: number;
   private activityIdCounter: number;
-  private notificationIdCounter: number;
+
   private teamIdCounter: number;
 
   constructor() {
@@ -127,7 +110,7 @@ export class MemStorage implements IStorage {
     this.filesData = new Map();
     this.commentsData = new Map();
     this.activitiesData = new Map();
-    this.notificationsData = new Map();
+
     this.teamsData = new Map();
     
     this.userIdCounter = 1;
@@ -135,7 +118,7 @@ export class MemStorage implements IStorage {
     this.fileIdCounter = 1;
     this.commentIdCounter = 1;
     this.activityIdCounter = 1;
-    this.notificationIdCounter = 1;
+
     this.teamIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
@@ -394,53 +377,7 @@ export class MemStorage implements IStorage {
     this.teamsData.delete(id);
   }
 
-  // Notification methods
-  async getNotification(id: number): Promise<Notification | undefined> {
-    return this.notificationsData.get(id);
-  }
 
-  async getNotificationsByUser(userId: number): Promise<Notification[]> {
-    return Array.from(this.notificationsData.values())
-      .filter(notification => notification.userId === userId)
-      .sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      });
-  }
-
-  async getUnreadNotificationsCount(userId: number): Promise<number> {
-    return Array.from(this.notificationsData.values())
-      .filter(notification => notification.userId === userId && !notification.isRead).length;
-  }
-
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
-    const id = this.notificationIdCounter++;
-    const now = new Date();
-    const notification = { 
-      ...notificationData, 
-      id, 
-      createdAt: now
-    } as Notification;
-    this.notificationsData.set(id, notification);
-    return notification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    const notification = this.notificationsData.get(id);
-    if (notification) {
-      notification.isRead = true;
-      this.notificationsData.set(id, notification);
-    }
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    Array.from(this.notificationsData.values())
-      .filter(notification => notification.userId === userId)
-      .forEach(notification => {
-        notification.isRead = true;
-        this.notificationsData.set(notification.id, notification);
-      });
-  }
 }
 
 // PostgreSQL Database Storage Implementation
@@ -642,45 +579,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(teams).where(eq(teams.id, id));
   }
 
-  // Notification methods
-  async getNotification(id: number): Promise<Notification | undefined> {
-    const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
-    return notification;
-  }
 
-  async getNotificationsByUser(userId: number): Promise<Notification[]> {
-    return await db.select().from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
-  }
-
-  async getUnreadNotificationsCount(userId: number): Promise<number> {
-    const result = await db.select().from(notifications)
-      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
-    return result.length;
-  }
-
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
-    const [notification] = await db
-      .insert(notifications)
-      .values(notificationData as any)
-      .returning();
-    return notification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, id));
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
-  }
 }
 
 export const storage = new DatabaseStorage();

@@ -103,27 +103,15 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Notification types enum
-export enum NotificationType {
-  TASK_CREATED = 'TASK_CREATED',
-  TASK_ASSIGNED = 'TASK_ASSIGNED',
-  TASK_UNASSIGNED = 'TASK_UNASSIGNED',
-  TASK_STATUS_CHANGED = 'TASK_STATUS_CHANGED',
-  TASK_DUE_DATE_CHANGED = 'TASK_DUE_DATE_CHANGED',
-  TASK_COMMENT_ADDED = 'TASK_COMMENT_ADDED',
-  TASK_FILE_UPLOADED = 'TASK_FILE_UPLOADED'
-}
-
 // Notifications schema
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  type: text("type", { enum: Object.values(NotificationType) }).notNull(),
+  type: text("type").notNull(), // 'task_created', 'task_assigned', 'status_changed', 'file_uploaded', 'team_member_added'
   title: text("title").notNull(),
   message: text("message").notNull(),
   relatedTaskId: integer("related_task_id").references(() => tasks.id, { onDelete: "cascade" }),
   relatedUserId: integer("related_user_id").references(() => users.id, { onDelete: "cascade" }),
-  triggeredBy: integer("triggered_by").references(() => users.id, { onDelete: "set null" }),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -156,11 +144,6 @@ export type Comment = typeof comments.$inferSelect;
 export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
-
-export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type Notification = typeof notifications.$inferSelect;
-export type SelectNotification = typeof notifications.$inferSelect;
 
 
 
