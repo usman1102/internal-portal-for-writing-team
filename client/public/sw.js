@@ -26,14 +26,24 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching static assets');
-        // Cache only the essential files that actually exist
-        const essentialAssets = ['/manifest.json'];
-        return cache.addAll(essentialAssets).catch(() => {
-          // Continue even if some assets fail to cache
-          console.log('Some assets failed to cache, continuing...');
+        // Cache essential files
+        const essentialAssets = [
+          '/',
+          '/manifest.json',
+          '/pwa-192x192.png',
+          '/pwa-512x512.png',
+          '/apple-touch-icon.png'
+        ];
+        return cache.addAll(essentialAssets).catch((error) => {
+          console.log('Some assets failed to cache:', error);
+          // Cache at least the manifest
+          return cache.add('/manifest.json');
         });
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('Service Worker: Skip waiting');
+        return self.skipWaiting();
+      })
   );
 });
 
