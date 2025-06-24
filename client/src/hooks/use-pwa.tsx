@@ -12,11 +12,14 @@ interface PWAHookReturn {
 export function usePWA(): PWAHookReturn {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') return;
+    
     // Check if app is installed
     const checkInstalled = () => {
       return window.matchMedia('(display-mode: standalone)').matches ||
