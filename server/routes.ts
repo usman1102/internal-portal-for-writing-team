@@ -354,7 +354,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send notifications for task creation
-      await notificationService.notifyTaskCreated(task, req.user.id);
+      try {
+        await notificationService.notifyTaskCreated(task, req.user.id);
+      } catch (notificationError) {
+        console.error('Notification error:', notificationError);
+        // Continue with response even if notification fails
+      }
       
       res.status(201).json(task);
     } catch (error) {
@@ -458,25 +463,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Send notifications for status change
-        await notificationService.notifyTaskStatusChanged(
-          updatedTask!,
-          String(task.status || 'NEW'),
-          req.body.status,
-          req.user.id,
-          task.assignedById || undefined
-        );
+        try {
+          await notificationService.notifyTaskStatusChanged(
+            updatedTask!,
+            String(task.status || 'NEW'),
+            req.body.status,
+            req.user.id,
+            task.assignedById || undefined
+          );
+        } catch (notificationError) {
+          console.error('Notification error:', notificationError);
+        }
       }
 
       // Handle task assignment/unassignment notifications
       if (req.body.assignedToId !== undefined && req.body.assignedToId !== task.assignedToId) {
         if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
           // Task assigned
-          await notificationService.notifyTaskAssigned(
-            updatedTask!,
-            req.body.assignedToId,
-            req.user.id,
-            task.assignedById ?? undefined
-          );
+          try {
+            await notificationService.notifyTaskAssigned(
+              updatedTask!,
+              req.body.assignedToId,
+              req.user.id,
+              task.assignedById ?? undefined
+            );
+          } catch (notificationError) {
+            console.error('Notification error:', notificationError);
+          }
         }
       }
       

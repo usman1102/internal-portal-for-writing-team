@@ -44,7 +44,7 @@ export function useNotifications() {
     refetchInterval: 30000 // Refetch every 30 seconds
   });
 
-  const unreadCount = (unreadData as any)?.count || 0;
+  const unreadCount = unreadData && typeof unreadData === 'object' && 'count' in unreadData ? (unreadData as any).count : 0;
 
   // Mark notification as read
   const markAsReadMutation = useMutation({

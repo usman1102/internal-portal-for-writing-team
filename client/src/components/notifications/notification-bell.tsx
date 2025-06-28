@@ -100,13 +100,13 @@ export function NotificationBell() {
           <div className="p-4 text-center text-sm text-gray-500">
             Loading notifications...
           </div>
-        ) : notifications.length === 0 ? (
+        ) : !notifications || (notifications as any[]).length === 0 ? (
           <div className="p-4 text-center text-sm text-gray-500">
             No notifications yet
           </div>
         ) : (
           <ScrollArea className="h-96">
-            {notifications.map((notification: any) => (
+            {(notifications as any[]).map((notification: any) => (
               <DropdownMenuItem
                 key={notification.id}
                 className={cn(
