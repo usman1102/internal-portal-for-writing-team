@@ -11,6 +11,7 @@ import AnalyticsPage from "@/pages/analytics-page";
 import TeamPage from "@/pages/team-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
+import { AuthGuard } from "./components/auth-guard";
 import { ThemeProvider } from "./hooks/use-theme";
 import { usePWA } from "./hooks/use-pwa";
 import { InstallPrompt } from "./components/ui/install-prompt";
@@ -61,7 +62,9 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <AuthGuard>
+              <Router />
+            </AuthGuard>
             {showInstallPrompt && !sessionStorage.getItem('pwa-install-dismissed') && (
               <InstallPrompt onInstall={handleInstall} onDismiss={handleDismissInstall} />
             )}
