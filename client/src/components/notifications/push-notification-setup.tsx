@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { TestPushButton } from "./test-push-button";
+import { PushStatusIndicator } from "./push-status-indicator";
 // Convert base64 VAPID key to Uint8Array
 function urlB64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -154,6 +155,9 @@ export function PushNotificationSetup() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Status indicator */}
+        <PushStatusIndicator />
+        
         {/* Permission status */}
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2">

@@ -107,6 +107,15 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
         ]
       });
 
+      // For development/testing with fake endpoints, skip actual push sending
+      if (subscription.endpoint.includes('test-endpoint') || 
+          subscription.endpoint.includes('localhost') ||
+          subscription.endpoint.includes('fake-endpoint')) {
+        console.log(`[PUSH] Skipping actual push for test endpoint: ${subscription.endpoint}`);
+        console.log(`[PUSH] Would send payload:`, pushPayload);
+        return;
+      }
+
       const result = await webpush.sendNotification(
         {
           endpoint: subscription.endpoint,
