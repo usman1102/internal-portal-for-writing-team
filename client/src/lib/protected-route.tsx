@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { Route, useLocation, Redirect } from "wouter";
-import { useEffect } from "react";
+import { Route, Redirect } from "wouter";
 
 export function ProtectedRoute({
   path,
@@ -17,14 +16,17 @@ export function ProtectedRoute({
       {() => {
         if (isLoading) {
           return (
-            <div className="flex items-center justify-center min-h-screen">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-gray-600">Loading...</p>
+              </div>
             </div>
           );
         }
 
         if (!user) {
-          return <Redirect to="/auth" />;
+          return <Redirect to="/auth" replace />;
         }
 
         return <Component />;

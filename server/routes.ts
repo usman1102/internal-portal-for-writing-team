@@ -1145,8 +1145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscription = await storage.createPushSubscription({
         userId: req.user.id,
         endpoint: req.body.endpoint,
-        p256dhKey: req.body.keys?.p256dh || '',
-        authKey: req.body.keys?.auth || ''
+        p256dh: req.body.keys?.p256dh || '',
+        auth: req.body.keys?.auth || ''
       });
       
       res.json(subscription);

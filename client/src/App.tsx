@@ -19,11 +19,11 @@ import { useState, useEffect } from "react";
 function Router() {
   return (
     <Switch>
+      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={() => <DashboardPage />} />
       <ProtectedRoute path="/tasks" component={() => <TasksPage />} />
       <ProtectedRoute path="/analytics" component={() => <AnalyticsPage />} />
       <ProtectedRoute path="/team" component={() => <TeamPage />} />
-      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
