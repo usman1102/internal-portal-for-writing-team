@@ -107,21 +107,12 @@ export function NotificationBell() {
         ) : (
           <ScrollArea className="h-96">
             {(notifications as any[]).map((notification: any) => (
-              <DropdownMenuItem
+              <div
                 key={notification.id}
                 className={cn(
-                  "flex items-start gap-3 p-3 cursor-pointer",
+                  "flex items-start gap-3 p-3 cursor-default",
                   !notification.isRead && "bg-blue-50"
                 )}
-                onClick={() => {
-                  if (!notification.isRead) {
-                    markAsRead(notification.id);
-                  }
-                  // Navigate to task if relatedTaskId exists
-                  if (notification.relatedTaskId) {
-                    window.location.href = `/tasks?taskId=${notification.relatedTaskId}`;
-                  }
-                }}
               >
                 <div className="flex-shrink-0 text-lg">
                   {getNotificationIcon(notification.type)}
@@ -148,7 +139,18 @@ export function NotificationBell() {
                     {formatDateTime(notification.createdAt)}
                   </p>
                 </div>
-              </DropdownMenuItem>
+                {!notification.isRead && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => markAsRead(notification.id)}
+                    disabled={isMarkingRead}
+                    className="h-6 px-2 text-xs ml-2"
+                  >
+                    <Check className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             ))}
           </ScrollArea>
         )}
