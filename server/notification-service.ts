@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { NotificationType, UserRole, type User, type Task, type InsertNotification } from "@shared/schema";
-import webpush from "web-push";
+import * as webpush from "web-push";
 import { WebSocket } from "ws";
 
 // Configure web-push (you'll need to set these environment variables)
@@ -209,7 +209,7 @@ export async function getRelevantUserIds(
   }
   
   // Remove duplicates and action user
-  return [...new Set(relevantUserIds)].filter(id => id !== actionUserId);
+  return Array.from(new Set(relevantUserIds)).filter(id => id !== actionUserId);
 }
 
 // Notification helper functions for different events

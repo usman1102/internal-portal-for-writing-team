@@ -2,7 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, insertNotificationSchema, insertPushSubscriptionSchema, UserRole, TaskStatus, NotificationType } from "@shared/schema";
+import { WebSocketServer, WebSocket } from "ws";
+import * as notificationService from "./notification-service";
 import { z } from "zod";
 
 
@@ -890,9 +892,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification Routes
+  app.get("/api/notifications", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const limit = parseInt(req.query.limit as string) || 50;
+      const notifications = await storage.getNotificationsByUser(req.user!.id, limit);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
 
+  app.get("/api/notifications/unread-count", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const count = await storage.getUnreadNotificationCount(req.user!.id);
+      res.json({ count });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.markAllNotificationsAsRead(req.user!.id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Push subscription routes
+  app.post("/api/push-subscription", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const subscriptionData = {
+        userId: req.user!.id,
+        endpoint: req.body.endpoint,
+        p256dh: req.body.keys.p256dh,
+        auth: req.body.keys.auth
+      };
+      
+      const subscription = await storage.createPushSubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/push-subscription", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.deletePushSubscription(req.user!.id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   const httpServer = createServer(app);
+  
+  // WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('WebSocket connection established');
+    
+    let userId: number | null = null;
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'auth' && data.userId) {
+          userId = data.userId;
+          notificationService.addWebSocketConnection(userId, ws);
+          console.log(`WebSocket authenticated for user ${userId}`);
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      if (userId) {
+        notificationService.removeWebSocketConnection(userId, ws);
+      }
+      console.log('WebSocket connection closed');
+    });
+  });
 
   return httpServer;
 }
