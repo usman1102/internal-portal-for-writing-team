@@ -1,47 +1,34 @@
 # Push Notification Setup Guide
 
-This document explains how to set up real background push notifications for Paper Slay PWA.
+This document explains the background push notification setup for Paper Slay PWA.
 
 ## Current Status
 
 ✅ **Service Worker**: Properly configured with push event handlers
-✅ **VAPID Keys**: Generated and configured for secure messaging
+✅ **VAPID Keys**: Real keys configured via environment variables
 ✅ **Notification API**: Full implementation with click handling and actions
 ✅ **Background Sync**: Queue management for offline scenarios
 ✅ **Deep Linking**: Notifications open app to specific tasks
+✅ **Real Push Support**: Direct VAPID-based push notifications (no FCM required)
 
-## For Real Push Notifications (Production)
+## How It Works
 
-### 1. Firebase Cloud Messaging (FCM) Setup
+### Direct VAPID Push Notifications
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or use existing one
-3. Go to Project Settings > Cloud Messaging
-4. Generate a new web push certificate
-5. Copy the "Server key" and "Sender ID"
+The system uses direct VAPID-based push notifications without requiring Firebase:
 
-### 2. Update Configuration
+1. **VAPID Keys**: Configured via environment variables
+   - `VAPID_PUBLIC_KEY`: Browser subscription key
+   - `VAPID_PRIVATE_KEY`: Server signing key  
+   - `VAPID_EMAIL`: Contact email for push service
 
-Update `public/manifest.json`:
-```json
-{
-  "gcm_sender_id": "YOUR_FIREBASE_SENDER_ID"
-}
-```
+2. **Push Flow**:
+   - User enables notifications → Browser subscribes with VAPID public key
+   - Server stores subscription → Links to user account
+   - Events trigger notifications → Server sends push via web-push library
+   - Service worker receives push → Shows notification even when app closed
 
-Update VAPID keys in `server/notification-service.ts`:
-```javascript
-webpush.setVapidDetails(
-  'mailto:your-email@domain.com',
-  'YOUR_FIREBASE_WEB_PUSH_PUBLIC_KEY',
-  'YOUR_FIREBASE_WEB_PUSH_PRIVATE_KEY'
-);
-```
-
-Update public key in `client/src/components/notifications/push-notification-setup.tsx`:
-```javascript
-applicationServerKey: urlB64ToUint8Array('YOUR_FIREBASE_WEB_PUSH_PUBLIC_KEY')
-```
+3. **No Firebase Required**: Direct browser push API communication
 
 ### 3. Testing Background Notifications
 

@@ -48,6 +48,19 @@ function isChromeBrowser(): boolean {
   return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 }
 
+// Get VAPID public key from server
+async function getVapidPublicKey(): Promise<string> {
+  try {
+    const response = await fetch('/api/vapid-public-key');
+    const data = await response.json();
+    return data.publicKey;
+  } catch (error) {
+    console.error('Failed to get VAPID public key:', error);
+    // Fallback to environment or default
+    return 'BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg';
+  }
+}
+
 export function PushNotificationSetup() {
   const { user } = useAuth();
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
@@ -100,7 +113,7 @@ export function PushNotificationSetup() {
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array('BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg')
+        applicationServerKey: urlB64ToUint8Array(await getVapidPublicKey())
       });
 
       // Send subscription to server

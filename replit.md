@@ -134,10 +134,11 @@ Changelog:
 - June 28, 2025. Implemented comprehensive background push notifications:
   - Service worker with push event handling for background notifications
   - Rich notifications with task metadata, action buttons, and deep linking
-  - VAPID keys configuration for secure push messaging
+  - Real VAPID keys configuration for secure push messaging via environment variables
   - Notification click handling to open app to specific tasks
   - Background sync for offline notification queue management
-  - Push notification setup component for mobile Chrome users
+  - Push notification setup component with status indicators and test functionality
   - Service worker registration in main.tsx for proper PWA functionality
   - Enhanced notification service with logging and error handling
   - iOS and Android PWA compatibility with proper permission requests
+  - Direct VAPID-based push (no Firebase required) for true background notifications

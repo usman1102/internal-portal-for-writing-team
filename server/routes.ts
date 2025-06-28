@@ -1166,5 +1166,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // VAPID public key endpoint
+  app.get("/api/vapid-public-key", async (req, res, next) => {
+    try {
+      res.json({ 
+        publicKey: process.env.VAPID_PUBLIC_KEY || 'BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg'
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }

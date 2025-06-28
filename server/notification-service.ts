@@ -3,11 +3,11 @@ import { NotificationType, UserRole, type User, type Task, type InsertNotificati
 import webpush from "web-push";
 import { WebSocket } from "ws";
 
-// Configure web-push with VAPID keys
+// Configure web-push with real VAPID keys
 webpush.setVapidDetails(
-  'mailto:admin@papersley.com',
-  'BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg',
-  'xlGnncGtpaZa1oGFOMtvbY66XzV_uBcI0-C4A7QDLDQ'
+  process.env.VAPID_EMAIL || 'mailto:admin@papersley.com',
+  process.env.VAPID_PUBLIC_KEY || '',
+  process.env.VAPID_PRIVATE_KEY || ''
 );
 
 // WebSocket connections map: userId -> WebSocket[]
@@ -107,14 +107,13 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
         ]
       });
 
-      // For development/testing with fake endpoints, skip actual push sending
-      if (subscription.endpoint.includes('test-endpoint') || 
-          subscription.endpoint.includes('localhost') ||
-          subscription.endpoint.includes('fake-endpoint')) {
-        console.log(`[PUSH] Skipping actual push for test endpoint: ${subscription.endpoint}`);
-        console.log(`[PUSH] Would send payload:`, pushPayload);
-        return;
-      }
+      // Log the push attempt
+      console.log(`[PUSH] Attempting to send to endpoint: ${subscription.endpoint.substring(0, 50)}...`);
+      console.log(`[PUSH] Payload preview:`, { 
+        title: payload.title, 
+        taskId: payload.taskId,
+        type: payload.type 
+      });
 
       const result = await webpush.sendNotification(
         {
