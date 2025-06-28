@@ -84,8 +84,26 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
         badge: '/icon-192.png',
         data: {
           taskId: payload.taskId,
-          type: payload.type
-        }
+          type: payload.type,
+          url: payload.taskId ? `/tasks?taskId=${payload.taskId}` : '/',
+          notificationId: payload.notificationId,
+          actionUserId: payload.actionUserId,
+          timestamp: Date.now()
+        },
+        tag: payload.taskId ? `task-${payload.taskId}` : 'general',
+        requireInteraction: true,
+        actions: [
+          {
+            action: 'view',
+            title: 'View Task',
+            icon: '/icon-32.png'
+          },
+          {
+            action: 'mark-read',
+            title: 'Mark as Read',
+            icon: '/icon-32.png'
+          }
+        ]
       });
 
       await webpush.sendNotification(

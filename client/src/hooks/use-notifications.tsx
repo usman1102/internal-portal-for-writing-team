@@ -78,7 +78,7 @@ export function useNotifications() {
     }
   });
 
-  // WebSocket connection for real-time updates
+  // Enhanced WebSocket connection for real-time updates
   useEffect(() => {
     if (!user) return;
 
@@ -106,8 +106,12 @@ export function useNotifications() {
             queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
             queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
             
-            // Show browser notification if supported
-            if ('Notification' in window && Notification.permission === 'granted') {
+            // Don't show browser notifications - let push notifications handle background notifications
+            // Only show if app is in foreground and push notifications aren't available
+            if (document.visibilityState === 'visible' && 
+                'Notification' in window && 
+                Notification.permission === 'granted' &&
+                !('serviceWorker' in navigator)) {
               new Notification(data.data.title, {
                 body: data.data.message,
                 icon: '/icon-192.png',
@@ -139,6 +143,38 @@ export function useNotifications() {
       }
     };
   }, [user, queryClient]);
+
+  // Listen for service worker messages
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleMessage = (event) => {
+      const { data } = event;
+      
+      switch (data.type) {
+        case 'NAVIGATE':
+          // Handle navigation from notification click
+          window.history.pushState({}, '', data.url);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          break;
+          
+        case 'NOTIFICATION_READ':
+          // Refresh notification data when marked as read from service worker
+          queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread-count'] });
+          break;
+          
+        default:
+          console.log('Unknown message from service worker:', data);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
+  }, [queryClient]);
 
   return {
     notifications,
