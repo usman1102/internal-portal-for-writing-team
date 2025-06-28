@@ -30,6 +30,14 @@ This is a full-stack web application built for managing freelance writing tasks 
 
 ## Key Components
 
+### Progressive Web App (PWA) Features
+- **Mobile-Only PWA**: PWA functionality exclusively enabled on mobile devices (Android/iOS)
+- **Desktop Web-Only**: Desktop users access the portal as a standard web application
+- **Smart Device Detection**: Automatic detection of mobile devices using user agent and touch capabilities
+- **Install Prompts**: Native app-like installation prompts on supported mobile browsers
+- **Offline Capability**: Service worker for caching and offline functionality
+- **Custom App Icon**: Uses the WritePro pen logo for mobile app icon
+
 ### Authentication & Authorization
 - **Multi-role System**: 5 distinct user roles with different permissions
 - **Session-based Auth**: Secure session management with PostgreSQL backing
@@ -73,6 +81,11 @@ This is a full-stack web application built for managing freelance writing tasks 
 - **@radix-ui/***: Accessible UI primitives
 - **tailwindcss**: Utility-first CSS framework
 
+### PWA Dependencies
+- **Service Worker**: Custom service worker for offline caching
+- **Web App Manifest**: PWA manifest with mobile-specific configuration
+- **Mobile Detection**: React hooks for device detection and PWA management
+
 ### Development Dependencies
 - **tsx**: TypeScript execution for development
 - **esbuild**: Fast JavaScript bundler for production
@@ -108,3 +121,9 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - June 24, 2025. Initial setup
+- June 28, 2025. Added Progressive Web App (PWA) functionality:
+  - Mobile-only PWA implementation with device detection
+  - Custom service worker for offline capability
+  - Install prompts and app manifest
+  - Desktop remains web-only as requested
+  - Uses WritePro pen logo as app icon

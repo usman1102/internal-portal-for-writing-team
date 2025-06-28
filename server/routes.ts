@@ -10,6 +10,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
+  // Serve PWA files
+  app.get("/manifest.json", (req, res) => {
+    res.sendFile("manifest.json", { root: "public" });
+  });
+
+  app.get("/sw.js", (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile("sw.js", { root: "public" });
+  });
+
+  app.get("/icon-192.png", (req, res) => {
+    res.sendFile("icon-192.png", { root: "public" });
+  });
+
+  app.get("/icon-512.png", (req, res) => {
+    res.sendFile("icon-512.png", { root: "public" });
+  });
+
   // Users routes
   app.get("/api/users", async (req, res, next) => {
     try {
