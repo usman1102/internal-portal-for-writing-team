@@ -577,22 +577,22 @@ export function ViewTaskDialog({
                         {instructionFiles.map((file) => (
                           <div
                             key={file.id}
-                            className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                            className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
                           >
-                            <div className="h-8 w-8 bg-blue-100 rounded flex items-center justify-center">
+                            <div className="h-8 w-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
                               {getFileIcon(file.fileType)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-sm font-medium break-all leading-tight">{file.fileName}</p>
+                              <p className="text-xs text-gray-500 mt-1">
                                 {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-blue-600 hover:bg-blue-100"
+                                className="text-blue-600 hover:bg-blue-100 h-8 w-8 p-0"
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = `/api/files/download/${file.id}`;
@@ -610,7 +610,7 @@ export function ViewTaskDialog({
                                   size="sm"
                                   onClick={() => deleteFileMutation.mutate(file.id)}
                                   disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
+                                  className="text-red-600 hover:bg-red-100 h-8 w-8 p-0"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -654,22 +654,22 @@ export function ViewTaskDialog({
                         {draftFiles.map((file) => (
                           <div
                             key={file.id}
-                            className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                            className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
                           >
-                            <div className="h-8 w-8 bg-yellow-100 rounded flex items-center justify-center">
+                            <div className="h-8 w-8 bg-yellow-100 rounded flex items-center justify-center flex-shrink-0">
                               {getFileIcon(file.fileType)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-sm font-medium break-all leading-tight">{file.fileName}</p>
+                              <p className="text-xs text-gray-500 mt-1">
                                 {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-yellow-600 hover:bg-yellow-100"
+                                className="text-yellow-600 hover:bg-yellow-100 h-8 w-8 p-0"
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = `/api/files/download/${file.id}`;
@@ -687,7 +687,7 @@ export function ViewTaskDialog({
                                   size="sm"
                                   onClick={() => deleteFileMutation.mutate(file.id)}
                                   disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
+                                  className="text-red-600 hover:bg-red-100 h-8 w-8 p-0"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -731,22 +731,22 @@ export function ViewTaskDialog({
                         {finalFiles.map((file) => (
                           <div
                             key={file.id}
-                            className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200"
+                            className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200"
                           >
-                            <div className="h-8 w-8 bg-green-100 rounded flex items-center justify-center">
+                            <div className="h-8 w-8 bg-green-100 rounded flex items-center justify-center flex-shrink-0">
                               {getFileIcon(file.fileType)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-sm font-medium break-all leading-tight">{file.fileName}</p>
+                              <p className="text-xs text-gray-500 mt-1">
                                 {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-green-600 hover:bg-green-100"
+                                className="text-green-600 hover:bg-green-100 h-8 w-8 p-0"
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = `/api/files/download/${file.id}`;
@@ -764,7 +764,7 @@ export function ViewTaskDialog({
                                   size="sm"
                                   onClick={() => deleteFileMutation.mutate(file.id)}
                                   disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
+                                  className="text-red-600 hover:bg-red-100 h-8 w-8 p-0"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -808,22 +808,22 @@ export function ViewTaskDialog({
                         {feedbackFiles.map((file) => (
                           <div
                             key={file.id}
-                            className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200"
+                            className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200"
                           >
-                            <div className="h-8 w-8 bg-purple-100 rounded flex items-center justify-center">
+                            <div className="h-8 w-8 bg-purple-100 rounded flex items-center justify-center flex-shrink-0">
                               {getFileIcon(file.fileType)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{file.fileName}</p>
-                              <p className="text-xs text-gray-500">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-sm font-medium break-all leading-tight">{file.fileName}</p>
+                              <p className="text-xs text-gray-500 mt-1">
                                 {formatFileSize(file.fileSize)} • {formatDateTime(file.uploadedAt!)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-purple-600 hover:bg-purple-100"
+                                className="text-purple-600 hover:bg-purple-100 h-8 w-8 p-0"
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = `/api/files/download/${file.id}`;
@@ -841,7 +841,7 @@ export function ViewTaskDialog({
                                   size="sm"
                                   onClick={() => deleteFileMutation.mutate(file.id)}
                                   disabled={deleteFileMutation.isPending}
-                                  className="text-red-600 hover:bg-red-100"
+                                  className="text-red-600 hover:bg-red-100 h-8 w-8 p-0"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>

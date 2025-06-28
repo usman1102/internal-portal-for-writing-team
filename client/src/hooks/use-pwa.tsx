@@ -15,13 +15,17 @@ export function usePWA() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection function
+  // Mobile detection function with Chrome browser check
   const detectMobile = () => {
     const userAgent = navigator.userAgent.toLowerCase();
     const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const isSmallScreen = window.innerWidth <= 768;
-    return mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+    const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent);
+    const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+    
+    // Only enable PWA on mobile Chrome browsers
+    return isMobile && isChrome;
   };
 
   useEffect(() => {

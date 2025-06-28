@@ -15,16 +15,20 @@
     
     <!-- PWA Manifest - Only load on mobile -->
     <script>
-      // Mobile detection function
+      // Mobile detection function with Chrome browser check
       function isMobileDevice() {
         const userAgent = navigator.userAgent.toLowerCase();
         const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         const isSmallScreen = window.innerWidth <= 768;
-        return mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+        const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent);
+        const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+        
+        // Only enable PWA on mobile Chrome browsers
+        return isMobile && isChrome;
       }
       
-      // Only add manifest and enable PWA on mobile devices
+      // Only add manifest and enable PWA on mobile Chrome browsers
       if (isMobileDevice()) {
         const manifestLink = document.createElement('link');
         manifestLink.rel = 'manifest';
