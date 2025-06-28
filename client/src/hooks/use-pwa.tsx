@@ -21,10 +21,10 @@ export function usePWA() {
     const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const isSmallScreen = window.innerWidth <= 768;
-    const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent);
+    const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent) && !/safari/i.test(userAgent);
     const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
     
-    // Only enable PWA on mobile Chrome browsers
+    // Only enable PWA on mobile Chrome browsers (not Safari)
     return isMobile && isChrome;
   };
 

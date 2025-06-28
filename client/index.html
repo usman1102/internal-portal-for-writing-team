@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>WritePro - Freelance Writing Management</title>
+    <title>Paper Slay - Freelance Writing Management</title>
     <link rel="icon" type="image/png" href="/icon-192.png" />
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#3b82f6" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="no" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="WritePro" />
+    <meta name="apple-mobile-web-app-title" content="Paper Slay" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     
-    <!-- PWA Manifest - Only load on mobile -->
+    <!-- PWA Manifest - Only load on mobile Chrome -->
     <script>
       // Mobile detection function with Chrome browser check
       function isMobileDevice() {
@@ -21,10 +21,10 @@
         const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         const isSmallScreen = window.innerWidth <= 768;
-        const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent);
+        const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent) && !/safari/i.test(userAgent);
         const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
         
-        // Only enable PWA on mobile Chrome browsers
+        // Only enable PWA on mobile Chrome browsers (not Safari)
         return isMobile && isChrome;
       }
       
