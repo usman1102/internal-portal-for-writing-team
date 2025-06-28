@@ -225,7 +225,7 @@ export async function notifyTaskCreated(task: Task, createdByUserId: number) {
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.TASK_CREATED,
     title: 'New Task Created',
-    message: `${createdByUser?.username || 'Someone'} created a new task: ${task.title}`,
+    message: `${createdByUser?.username || 'Someone'} created a new task: Task #${task.id}: ${task.title}`,
     taskId: task.id,
     actionUserId: createdByUserId,
     metadata: { taskTitle: task.title }
@@ -246,7 +246,7 @@ export async function notifyTaskAssigned(task: Task, assignedToUserId: number, a
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.TASK_ASSIGNED,
     title: 'Task Assigned',
-    message: `${assignedByUser?.username || 'Someone'} assigned "${task.title}" to ${assignedToUser?.username || 'someone'}`,
+    message: `${assignedByUser?.username || 'Someone'} assigned "Task #${task.id}: ${task.title}" to ${assignedToUser?.username || 'someone'}`,
     taskId: task.id,
     actionUserId: assignedByUserId,
     metadata: { 
@@ -270,7 +270,7 @@ export async function notifyTaskStatusChanged(task: Task, oldStatus: string, new
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.TASK_STATUS_CHANGED,
     title: 'Task Status Updated',
-    message: `${changedByUser?.username || 'Someone'} changed "${task.title}" status from ${oldStatus} to ${newStatus}`,
+    message: `${changedByUser?.username || 'Someone'} changed "Task #${task.id}: ${task.title}" status from ${oldStatus} to ${newStatus}`,
     taskId: task.id,
     actionUserId: changedByUserId,
     metadata: { 
@@ -295,7 +295,7 @@ export async function notifyCommentAdded(task: Task, commentContent: string, add
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.COMMENT_ADDED,
     title: 'New Comment',
-    message: `${addedByUser?.username || 'Someone'} commented on "${task.title}": ${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}`,
+    message: `${addedByUser?.username || 'Someone'} commented on "Task #${task.id}: ${task.title}": ${commentContent.substring(0, 100)}${commentContent.length > 100 ? '...' : ''}`,
     taskId: task.id,
     actionUserId: addedByUserId,
     metadata: { 
@@ -319,7 +319,7 @@ export async function notifyFileUploaded(task: Task, fileName: string, uploadedB
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.FILE_UPLOADED,
     title: 'File Uploaded',
-    message: `${uploadedByUser?.username || 'Someone'} uploaded "${fileName}" to task "${task.title}"`,
+    message: `${uploadedByUser?.username || 'Someone'} uploaded "${fileName}" to task "Task #${task.id}: ${task.title}"`,
     taskId: task.id,
     actionUserId: uploadedByUserId,
     metadata: { 
@@ -341,7 +341,7 @@ export async function notifyDeadlineReminder(task: Task, daysLeft: number, sales
   return createAndSendNotification(relevantUserIds, {
     type: NotificationType.DEADLINE_REMINDER,
     title: 'Deadline Reminder',
-    message: `Task "${task.title}" deadline is in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+    message: `Task "Task #${task.id}: ${task.title}" deadline is in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
     taskId: task.id,
     metadata: { 
       taskTitle: task.title,
