@@ -1,4 +1,4 @@
-const CACHE_NAME = 'papersley-v1';
+const CACHE_NAME = 'papersley-v2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',

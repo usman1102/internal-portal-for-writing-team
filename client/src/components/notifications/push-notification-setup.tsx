@@ -32,7 +32,7 @@ function isPushNotificationSupported(): boolean {
 // Check if running as PWA
 function isPWA(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true ||
+         (window.navigator as any).standalone === true ||
          document.referrer.includes('android-app://');
 }
 
@@ -98,7 +98,7 @@ export function PushNotificationSetup() {
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array('BPU8s2AaVr8lCWfQrZGKKHc3J2d7s1R2N9HZh3_TQjF8J1K7L4P5M6N8Q9S2V3X5Y7A9B2C4E6F8H1J3K5L7N9P1')
+        applicationServerKey: urlB64ToUint8Array('BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg')
       });
 
       // Send subscription to server
@@ -208,11 +208,14 @@ export function PushNotificationSetup() {
           )}
         </div>
 
-        {/* iOS PWA note */}
-        {navigator.userAgent.includes('iPhone') && (
+        {/* Device-specific notes */}
+        {isMobileDevice() && (
           <Alert>
             <AlertDescription className="text-xs">
-              On iOS, notifications work best when this app is installed to your home screen.
+              {navigator.userAgent.includes('iPhone') 
+                ? "On iOS, notifications work best when this app is installed to your home screen."
+                : "For best notification experience, install this app to your home screen."
+              }
             </AlertDescription>
           </Alert>
         )}

@@ -3,14 +3,12 @@ import { NotificationType, UserRole, type User, type Task, type InsertNotificati
 import * as webpush from "web-push";
 import { WebSocket } from "ws";
 
-// Configure web-push (you'll need to set these environment variables)
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    'mailto:your-email@example.com',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
-}
+// Configure web-push with VAPID keys
+webpush.setVapidDetails(
+  'mailto:admin@papersley.com',
+  'BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg',
+  'xlGnncGtpaZa1oGFOMtvbY66XzV_uBcI0-C4A7QDLDQ'
+);
 
 // WebSocket connections map: userId -> WebSocket[]
 const activeConnections = new Map<number, WebSocket[]>();
@@ -119,11 +117,6 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
         },
         pushPayload,
         {
-          vapidDetails: {
-            subject: 'mailto:admin@papersley.com',
-            publicKey: 'BPU8s2AaVr8lCWfQrZGKKHc3J2d7s1R2N9HZh3_TQjF8J1K7L4P5M6N8Q9S2V3X5Y7A9B2C4E6F8H1J3K5L7N9P1',
-            privateKey: 'mVp1qWr2eRt3yYu4iIo5pPa6sSd7fFg8hHj9kKl0zZx'
-          },
           TTL: 24 * 60 * 60, // 24 hours
           urgency: 'normal'
         }
@@ -137,7 +130,7 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
     console.error(`[PUSH] Error sending notification to user ${userId}:`, error);
     
     // If subscription is invalid, remove it
-    if (error.statusCode === 410 || error.statusCode === 404) {
+    if ((error as any).statusCode === 410 || (error as any).statusCode === 404) {
       console.log(`[PUSH] Removing invalid subscription for user ${userId}`);
       await storage.deletePushSubscription(userId);
     }

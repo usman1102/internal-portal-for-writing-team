@@ -131,3 +131,13 @@ Changelog:
   - Updated app name to "Paper Slay"
   - Fixed mobile file view responsiveness
   - Uses blue "P" logo with proper icon sizing
+- June 28, 2025. Implemented comprehensive background push notifications:
+  - Service worker with push event handling for background notifications
+  - Rich notifications with task metadata, action buttons, and deep linking
+  - VAPID keys configuration for secure push messaging
+  - Notification click handling to open app to specific tasks
+  - Background sync for offline notification queue management
+  - Push notification setup component for mobile Chrome users
+  - Service worker registration in main.tsx for proper PWA functionality
+  - Enhanced notification service with logging and error handling
+  - iOS and Android PWA compatibility with proper permission requests
