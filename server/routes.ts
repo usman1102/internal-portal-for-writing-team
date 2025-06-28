@@ -328,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const fileInfo of files) {
           try {
             // Create file record in database with actual content
-            await storage.createFile({
+            const createdFile = await storage.createFile({
               taskId: task.id,
               uploadedById: req.user.id,
               fileName: fileInfo.name,
@@ -338,6 +338,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
               isSubmission: false
             });
+            
+            // Send notification for file upload during task creation
+            try {
+              await notificationService.notifyFileUploaded(
+                task,
+                fileInfo.name,
+                req.user.id,
+                task.assignedById || undefined
+              );
+            } catch (notificationError) {
+              console.error('File upload notification error:', notificationError);
+            }
           } catch (fileError) {
             console.error('Error saving file info:', fileError);
             // Continue with other files even if one fails
@@ -566,6 +578,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const file = await storage.createFile(validatedData);
+
+      // Create activity for file upload
+      await storage.createActivity({
+        userId: req.user.id,
+        taskId: task.id,
+        action: 'FILE_UPLOADED',
+        description: `${req.user.fullName} uploaded file: ${validatedData.fileName}`
+      });
+
+      // Send notifications for file upload
+      try {
+        await notificationService.notifyFileUploaded(
+          task,
+          validatedData.fileName,
+          req.user.id,
+          task.assignedById || undefined
+        );
+      } catch (notificationError) {
+        console.error('File upload notification error:', notificationError);
+      }
       
       res.status(201).json(file);
     } catch (error) {
@@ -749,6 +781,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
+
+      // Send notifications for comment addition
+      try {
+        await notificationService.notifyCommentAdded(
+          task,
+          validatedData.content,
+          req.user.id,
+          task.assignedById || undefined
+        );
+      } catch (notificationError) {
+        console.error('Comment notification error:', notificationError);
+      }
       
       res.status(201).json(comment);
     } catch (error) {
@@ -1035,6 +1079,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.log('WebSocket connection closed');
     });
+  });
+
+  // Notification routes
+  app.get("/api/notifications", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notifications = await storage.getNotificationsByUser(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/notifications/unread-count", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const count = await storage.getUnreadNotificationCount(req.user.id);
+      res.json({ count });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const notificationId = parseInt(req.params.id);
+      if (isNaN(notificationId)) {
+        return res.status(400).send("Invalid notification ID");
+      }
+
+      // Verify notification belongs to user
+      const notification = await storage.getNotification(notificationId);
+      if (!notification || notification.userId !== req.user.id) {
+        return res.status(404).send("Notification not found");
+      }
+
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Push subscription routes
+  app.post("/api/push-subscription", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const subscription = await storage.createPushSubscription({
+        userId: req.user.id,
+        endpoint: req.body.endpoint,
+        p256dhKey: req.body.keys?.p256dh || '',
+        authKey: req.body.keys?.auth || ''
+      });
+      
+      res.json(subscription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/push-subscription", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.deletePushSubscription(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
   });
 
   return httpServer;
