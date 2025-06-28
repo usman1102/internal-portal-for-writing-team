@@ -31,12 +31,13 @@ This is a full-stack web application built for managing freelance writing tasks 
 ## Key Components
 
 ### Progressive Web App (PWA) Features
-- **Mobile-Only PWA**: PWA functionality exclusively enabled on mobile devices (Android/iOS)
+- **Chrome-Only PWA**: PWA functionality exclusively enabled on mobile Chrome browsers (Android/iOS)
+- **Safari Web Access**: Safari on iOS loads as regular web app without PWA installation
 - **Desktop Web-Only**: Desktop users access the portal as a standard web application
-- **Smart Device Detection**: Automatic detection of mobile devices using user agent and touch capabilities
-- **Install Prompts**: Native app-like installation prompts on supported mobile browsers
+- **Smart Device Detection**: Chrome browser detection prevents PWA features in Safari
+- **Install Prompts**: Native app-like installation prompts only in mobile Chrome
 - **Offline Capability**: Service worker for caching and offline functionality
-- **Custom App Icon**: Uses the WritePro pen logo for mobile app icon
+- **Custom App Icon**: Uses blue "P" logo with proper sizing for mobile app icon
 
 ### Authentication & Authorization
 - **Multi-role System**: 5 distinct user roles with different permissions
@@ -122,8 +123,11 @@ Preferred communication style: Simple, everyday language.
 Changelog:
 - June 24, 2025. Initial setup
 - June 28, 2025. Added Progressive Web App (PWA) functionality:
-  - Mobile-only PWA implementation with device detection
+  - Chrome-only PWA implementation with browser detection
+  - Safari on iOS loads as web app without PWA features
   - Custom service worker for offline capability
-  - Install prompts and app manifest
+  - Install prompts and app manifest for Chrome only
   - Desktop remains web-only as requested
-  - Uses WritePro pen logo as app icon
+  - Updated app name to "Paper Slay"
+  - Fixed mobile file view responsiveness
+  - Uses blue "P" logo with proper icon sizing
