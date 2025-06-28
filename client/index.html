@@ -3,6 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>WritePro - Freelance Writing Management</title>
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="WritePro" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- PWA Manifest - Only load on mobile -->
+    <script>
+      // Mobile detection function
+      function isMobileDevice() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const isSmallScreen = window.innerWidth <= 768;
+        return mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+      }
+      
+      // Only add manifest and enable PWA on mobile devices
+      if (isMobileDevice()) {
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = '/manifest.json';
+        document.head.appendChild(manifestLink);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -12,6 +12,9 @@ import TeamPage from "@/pages/team-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { ThemeProvider } from "./hooks/use-theme";
+import { usePWA } from "./hooks/use-pwa";
+import { InstallPrompt } from "./components/ui/install-prompt";
+import { useState, useEffect } from "react";
 
 function Router() {
   return (
@@ -27,6 +30,31 @@ function Router() {
 }
 
 function App() {
+  const { canInstall, installApp } = usePWA();
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  useEffect(() => {
+    // Show install prompt after a short delay if app can be installed
+    if (canInstall) {
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true);
+      }, 3000); // Wait 3 seconds before showing prompt
+      
+      return () => clearTimeout(timer);
+    }
+  }, [canInstall]);
+
+  const handleInstall = () => {
+    installApp();
+    setShowInstallPrompt(false);
+  };
+
+  const handleDismissInstall = () => {
+    setShowInstallPrompt(false);
+    // Don't show again for this session
+    sessionStorage.setItem('pwa-install-dismissed', 'true');
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -34,6 +62,9 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            {showInstallPrompt && !sessionStorage.getItem('pwa-install-dismissed') && (
+              <InstallPrompt onInstall={handleInstall} onDismiss={handleDismissInstall} />
+            )}
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>
