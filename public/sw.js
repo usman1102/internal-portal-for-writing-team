@@ -305,6 +305,17 @@ self.addEventListener('message', (event) => {
       self.skipWaiting();
       break;
       
+    case 'TEST_PUSH':
+      // Show a test notification to verify push is working
+      self.registration.showNotification('Test Push Notification', {
+        body: 'This is a test to verify push notifications are working',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'test-push',
+        data: { type: 'test' }
+      });
+      break;
+      
     default:
       console.log('[SW] Unknown message type:', type);
   }

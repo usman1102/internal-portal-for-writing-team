@@ -229,6 +229,11 @@ export default function DashboardPage() {
               isLoading={isLoadingActivities}
               onViewAllActivity={() => {}}
             />
+            
+            {/* Push Notification Setup - Only for mobile PWA users */}
+            <div className="mt-6">
+              <PushNotificationSetup />
+            </div>
           </div>
         </main>
       </div>

@@ -6,6 +6,7 @@ import { Bell, BellOff, Smartphone, Monitor } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { TestPushButton } from "./test-push-button";
 // Convert base64 VAPID key to Uint8Array
 function urlB64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -197,14 +198,17 @@ export function PushNotificationSetup() {
               {subscribeMutation.isPending ? 'Setting up...' : 'Enable Notifications'}
             </Button>
           ) : (
-            <Button 
-              variant="outline"
-              onClick={() => unsubscribeMutation.mutate()}
-              disabled={unsubscribeMutation.isPending}
-              className="flex-1"
-            >
-              {unsubscribeMutation.isPending ? 'Disabling...' : 'Disable Notifications'}
-            </Button>
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => unsubscribeMutation.mutate()}
+                disabled={unsubscribeMutation.isPending}
+                className="flex-1"
+              >
+                {unsubscribeMutation.isPending ? 'Disabling...' : 'Disable Notifications'}
+              </Button>
+              <TestPushButton />
+            </>
           )}
         </div>
 

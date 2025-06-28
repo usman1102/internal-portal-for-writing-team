@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { NotificationType, UserRole, type User, type Task, type InsertNotification } from "@shared/schema";
-import * as webpush from "web-push";
+import webpush from "web-push";
 import { WebSocket } from "ws";
 
 // Configure web-push with VAPID keys
