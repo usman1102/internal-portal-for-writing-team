@@ -10,21 +10,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
-  // Serve PWA files
+  // Serve PWA files with correct MIME types
   app.get("/manifest.json", (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     res.sendFile("manifest.json", { root: "public" });
   });
 
   app.get("/sw.js", (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
     res.sendFile("sw.js", { root: "public" });
   });
 
   app.get("/icon-192.png", (req, res) => {
+    res.setHeader('Content-Type', 'image/png');
     res.sendFile("icon-192.png", { root: "public" });
   });
 
   app.get("/icon-512.png", (req, res) => {
+    res.setHeader('Content-Type', 'image/png');
     res.sendFile("icon-512.png", { root: "public" });
   });
 
