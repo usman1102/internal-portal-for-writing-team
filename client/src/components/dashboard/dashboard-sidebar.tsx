@@ -13,6 +13,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { UserProfileDialog } from "@/components/user/user-profile-dialog";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface SidebarLinkProps {
   href: string;
