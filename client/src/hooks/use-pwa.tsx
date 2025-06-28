@@ -15,24 +15,29 @@ export function usePWA() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection function with Chrome browser check
+  // Mobile detection function
   const detectMobile = () => {
     const userAgent = navigator.userAgent.toLowerCase();
     const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const isSmallScreen = window.innerWidth <= 768;
-    const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent) && !/safari/i.test(userAgent);
     const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
     
-    // Only enable PWA on mobile Chrome browsers (not Safari)
-    return isMobile && isChrome;
+    return isMobile;
+  };
+
+  // Chrome detection for install prompts only
+  const detectChrome = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /chrome/i.test(userAgent) && !/edg/i.test(userAgent) && !/safari/i.test(userAgent);
   };
 
   useEffect(() => {
     const mobile = detectMobile();
+    const isChrome = detectChrome();
     setIsMobile(mobile);
 
-    // Only enable PWA features on mobile devices
+    // Enable PWA features on all mobile devices
     if (!mobile) return;
 
     // Check if already installed
@@ -40,8 +45,11 @@ export function usePWA() {
     const isInWebAppiOS = (window.navigator as any).standalone === true;
     setIsInstalled(isStandalone || isInWebAppiOS);
 
-    // Handle beforeinstallprompt event
+    // Handle beforeinstallprompt event (Chrome only)
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Only show install prompts in Chrome
+      if (!isChrome) return;
+      
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
@@ -93,10 +101,10 @@ export function usePWA() {
   };
 
   return {
-    isInstallable: isInstallable && isMobile,
+    isInstallable: isInstallable && isMobile && detectChrome(),
     isInstalled,
     isMobile,
     installApp,
-    canInstall: isInstallable && isMobile && !isInstalled
+    canInstall: isInstallable && isMobile && detectChrome() && !isInstalled
   };
 }
