@@ -12,21 +12,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    console.log('AuthGuard:', { user: !!user, isLoading, location });
-    
     // If not loading and no user, redirect to auth page
     if (!isLoading && !user && location !== "/auth") {
-      console.log('Redirecting to /auth');
       setLocation("/auth");
     }
     // If user exists and on auth page, redirect to dashboard
     if (!isLoading && user && location === "/auth") {
-      console.log('Redirecting to dashboard');
       setLocation("/");
     }
   }, [user, isLoading, location, setLocation]);
 
-  console.log('AuthGuard render:', { user: !!user, isLoading, location });
+
 
   if (isLoading) {
     return (
