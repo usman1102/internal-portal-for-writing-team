@@ -1,7 +1,8 @@
 {
   "name": "Paper Slay - Freelance Writing Management",
   "short_name": "Paper Slay",
-  "description": "Comprehensive web portal for managing freelance writing projects",
+  "description": "Professional freelance writing task management platform with real-time notifications",
+  "gcm_sender_id": "103953800507",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

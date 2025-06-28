@@ -78,6 +78,8 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
   try {
     const subscription = await storage.getPushSubscription(userId);
     if (subscription) {
+      console.log(`[PUSH] Sending notification to user ${userId}:`, payload.title);
+      
       const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.message,
@@ -107,7 +109,7 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
         ]
       });
 
-      await webpush.sendNotification(
+      const result = await webpush.sendNotification(
         {
           endpoint: subscription.endpoint,
           keys: {
@@ -115,11 +117,30 @@ async function sendPushNotification(userId: number, payload: NotificationPayload
             auth: subscription.auth
           }
         },
-        pushPayload
+        pushPayload,
+        {
+          vapidDetails: {
+            subject: 'mailto:admin@papersley.com',
+            publicKey: 'BPU8s2AaVr8lCWfQrZGKKHc3J2d7s1R2N9HZh3_TQjF8J1K7L4P5M6N8Q9S2V3X5Y7A9B2C4E6F8H1J3K5L7N9P1',
+            privateKey: 'mVp1qWr2eRt3yYu4iIo5pPa6sSd7fFg8hHj9kKl0zZx'
+          },
+          TTL: 24 * 60 * 60, // 24 hours
+          urgency: 'normal'
+        }
       );
+      
+      console.log(`[PUSH] Notification sent successfully to user ${userId}`, result);
+    } else {
+      console.log(`[PUSH] No push subscription found for user ${userId}`);
     }
   } catch (error) {
-    console.error('Push notification error:', error);
+    console.error(`[PUSH] Error sending notification to user ${userId}:`, error);
+    
+    // If subscription is invalid, remove it
+    if (error.statusCode === 410 || error.statusCode === 404) {
+      console.log(`[PUSH] Removing invalid subscription for user ${userId}`);
+      await storage.deletePushSubscription(userId);
+    }
   }
 }
 

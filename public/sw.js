@@ -120,20 +120,37 @@ self.addEventListener('push', (event) => {
     ]
   };
 
-  // Show notification
+  // Show notification with proper error handling
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, options)
-      .then(() => {
+    (async () => {
+      try {
+        console.log('[SW] Showing notification:', notificationData.title);
+        await self.registration.showNotification(notificationData.title, options);
         console.log('[SW] Notification shown successfully');
+        
         // Add to queue for background sync if needed
         notificationQueue.push({
           ...notificationData,
           timestamp: Date.now()
         });
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('[SW] Error showing notification:', error);
-      })
+        
+        // Fallback: try showing a simpler notification
+        try {
+          await self.registration.showNotification(notificationData.title, {
+            body: notificationData.body,
+            icon: notificationData.icon,
+            badge: notificationData.badge,
+            data: notificationData.data,
+            tag: notificationData.data.taskId ? `task-${notificationData.data.taskId}` : 'general'
+          });
+          console.log('[SW] Fallback notification shown');
+        } catch (fallbackError) {
+          console.error('[SW] Fallback notification failed:', fallbackError);
+        }
+      }
+    })()
   );
 });
 

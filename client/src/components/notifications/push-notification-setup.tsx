@@ -6,13 +6,45 @@ import { Bell, BellOff, Smartphone, Monitor } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  urlB64ToUint8Array, 
-  isPushNotificationSupported, 
-  isPWA, 
-  isMobileDevice,
-  isChromeBrowser 
-} from "@/utils/notification-utils";
+// Convert base64 VAPID key to Uint8Array
+function urlB64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Check if device supports push notifications
+function isPushNotificationSupported(): boolean {
+  return 'serviceWorker' in navigator && 
+         'PushManager' in window && 
+         'Notification' in window;
+}
+
+// Check if running as PWA
+function isPWA(): boolean {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true ||
+         document.referrer.includes('android-app://');
+}
+
+// Check if device is mobile
+function isMobileDevice(): boolean {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Check if browser is Chrome
+function isChromeBrowser(): boolean {
+  return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+}
 
 export function PushNotificationSetup() {
   const { user } = useAuth();
@@ -26,13 +58,18 @@ export function PushNotificationSetup() {
     const checkSupport = async () => {
       const supported = isPushNotificationSupported();
       setIsSupported(supported);
-      setNotificationPermission(Notification.permission);
+      
+      if ('Notification' in window) {
+        setNotificationPermission(Notification.permission);
+      }
 
       if (supported) {
         try {
+          // Wait for service worker to be ready
           const registration = await navigator.serviceWorker.ready;
           const subscription = await registration.pushManager.getSubscription();
           setPushSubscription(subscription);
+          console.log('Current push subscription:', subscription);
         } catch (error) {
           console.error('Error checking push subscription:', error);
         }
@@ -61,7 +98,7 @@ export function PushNotificationSetup() {
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array('BP5z8zKPl1M_jGUOO2xYt5M_9TdDw0EehP4j1KxP1FpOsAbYPtgFq0RbvwJZuHGjNVZc5bOIFBMWgEqnU0DhAHE')
+        applicationServerKey: urlB64ToUint8Array('BPU8s2AaVr8lCWfQrZGKKHc3J2d7s1R2N9HZh3_TQjF8J1K7L4P5M6N8Q9S2V3X5Y7A9B2C4E6F8H1J3K5L7N9P1')
       });
 
       // Send subscription to server
