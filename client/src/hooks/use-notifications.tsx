@@ -148,7 +148,7 @@ export function useNotifications() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    const handleMessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       const { data } = event;
       
       switch (data.type) {

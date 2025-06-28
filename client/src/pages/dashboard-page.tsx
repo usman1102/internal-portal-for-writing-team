@@ -10,6 +10,7 @@ import { TaskTable } from "@/components/dashboard/task-table";
 import { TeamMembers } from "@/components/dashboard/team-members";
 
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { PushNotificationSetup } from "@/components/notifications/push-notification-setup";
 import {
   ClipboardList,
   Users,

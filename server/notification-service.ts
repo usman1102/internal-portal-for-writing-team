@@ -55,6 +55,7 @@ interface NotificationPayload {
   taskId?: number;
   actionUserId?: number;
   metadata?: any;
+  notificationId?: number;
 }
 
 async function sendRealTimeNotification(userId: number, notification: any) {
@@ -144,11 +145,17 @@ export async function createAndSendNotification(
     const notification = await storage.createNotification(notificationData);
     notifications.push(notification);
     
+    // Add notification ID to payload for push notifications
+    const enhancedPayload = {
+      ...payload,
+      notificationId: notification.id
+    };
+    
     // Send real-time notification via WebSocket
     await sendRealTimeNotification(userId, notification);
     
-    // Send push notification for PWA
-    await sendPushNotification(userId, payload);
+    // Send push notification with enhanced payload
+    await sendPushNotification(userId, enhancedPayload);
   }
   
   return notifications;

@@ -6,22 +6,13 @@ import { Bell, BellOff, Smartphone, Monitor } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-
-// Convert base64 VAPID key to Uint8Array
-function urlB64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
+import { 
+  urlB64ToUint8Array, 
+  isPushNotificationSupported, 
+  isPWA, 
+  isMobileDevice,
+  isChromeBrowser 
+} from "@/utils/notification-utils";
 
 export function PushNotificationSetup() {
   const { user } = useAuth();
@@ -33,10 +24,7 @@ export function PushNotificationSetup() {
   // Check support and current state
   useEffect(() => {
     const checkSupport = async () => {
-      const supported = 'serviceWorker' in navigator && 
-                       'PushManager' in window && 
-                       'Notification' in window;
-      
+      const supported = isPushNotificationSupported();
       setIsSupported(supported);
       setNotificationPermission(Notification.permission);
 
@@ -106,17 +94,11 @@ export function PushNotificationSetup() {
     }
   });
 
-  if (!user || !isSupported) {
-    return (
-      <Alert>
-        <AlertDescription>
-          {!user 
-            ? "Please log in to enable push notifications"
-            : "Push notifications are not supported in this browser"
-          }
-        </AlertDescription>
-      </Alert>
-    );
+  // Only show on mobile Chrome or PWA
+  const shouldShow = isMobileDevice() && (isChromeBrowser() || isPWA());
+  
+  if (!user || !isSupported || !shouldShow) {
+    return null; // Don't show the component if not applicable
   }
 
   const isSubscribed = pushSubscription !== null;
