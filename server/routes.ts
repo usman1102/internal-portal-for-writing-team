@@ -352,6 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
+
+      // Send notifications for task creation
+      await notificationService.notifyTaskCreated(task, req.user.id);
       
       res.status(201).json(task);
     } catch (error) {
@@ -454,7 +457,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
+        // Send notifications for status change
+        await notificationService.notifyTaskStatusChanged(
+          updatedTask!,
+          String(task.status || 'NEW'),
+          req.body.status,
+          req.user.id,
+          task.assignedById || undefined
+        );
+      }
 
+      // Handle task assignment/unassignment notifications
+      if (req.body.assignedToId !== undefined && req.body.assignedToId !== task.assignedToId) {
+        if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
+          // Task assigned
+          await notificationService.notifyTaskAssigned(
+            updatedTask!,
+            req.body.assignedToId,
+            req.user.id,
+            task.assignedById ?? undefined
+          );
+        }
       }
       
       res.json(updatedTask);
@@ -984,7 +1007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const data = JSON.parse(message.toString());
         
         if (data.type === 'auth' && data.userId) {
-          userId = data.userId;
+          userId = Number(data.userId);
           notificationService.addWebSocketConnection(userId, ws);
           console.log(`WebSocket authenticated for user ${userId}`);
         }
@@ -994,7 +1017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     ws.on('close', () => {
-      if (userId) {
+      if (userId !== null) {
         notificationService.removeWebSocketConnection(userId, ws);
       }
       console.log('WebSocket connection closed');
