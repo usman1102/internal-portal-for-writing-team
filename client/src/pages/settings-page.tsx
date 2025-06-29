@@ -13,9 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { PushNotificationSetup } from "@/components/notifications/push-notification-setup";
-import { NotificationTestPanel } from "@/components/notifications/notification-test-panel";
-import { Settings, User as UserIcon, Bell, TestTube } from "lucide-react";
+import { Settings, User as UserIcon } from "lucide-react";
 
 const settingsFormSchema = insertUserSchema.extend({
   currentPassword: z.string().optional(),
@@ -291,37 +289,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Push Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Push Notifications
-              </CardTitle>
-              <CardDescription>
-                Enable background notifications for task updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PushNotificationSetup />
-            </CardContent>
-          </Card>
 
-          {/* Test Panel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TestTube className="h-5 w-5" />
-                Notification Testing
-              </CardTitle>
-              <CardDescription>
-                Test and verify notification functionality
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationTestPanel />
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>

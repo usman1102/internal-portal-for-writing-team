@@ -9,36 +9,7 @@
     <link rel="shortcut icon" href="/favicon.ico?v=2" />
     <meta name="msapplication-TileImage" content="/icon-192.png?v=2" />
     
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#3b82f6" />
-    <meta name="apple-mobile-web-app-capable" content="no" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Paper Slay" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    
-    <!-- PWA Manifest - Only load on mobile Chrome -->
-    <script>
-      // Mobile detection function with Chrome browser check
-      function isMobileDevice() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        const isSmallScreen = window.innerWidth <= 768;
-        const isChrome = /chrome/i.test(userAgent) && !/edg/i.test(userAgent) && !/safari/i.test(userAgent);
-        const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
-        
-        // Only enable PWA on mobile Chrome browsers (not Safari)
-        return isMobile && isChrome;
-      }
-      
-      // Only add manifest and enable PWA on mobile Chrome browsers
-      if (isMobileDevice()) {
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = '/manifest.json';
-        document.head.appendChild(manifestLink);
-      }
-    </script>
+
   </head>
   <body>
     <div id="root"></div>
