@@ -30,7 +30,7 @@ import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { db, pool } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -626,7 +626,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnreadNotificationCount(userId: number): Promise<number> {
-    const result = await db.select({ count: count() })
+    const result = await db.select({ count: count(notifications.id) })
       .from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
     return result[0]?.count || 0;

@@ -4,11 +4,16 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
+import { registerNotificationRoutes } from "./notification-routes";
+import { notificationService } from "./notification-service";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Register notification routes
+  registerNotificationRoutes(app);
 
   // Users routes
   app.get("/api/users", async (req, res, next) => {
@@ -328,6 +333,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
+
+      // Send notification for task creation
+      await notificationService.notifyTaskCreated(task, req.user.id);
       
       res.status(201).json(task);
     } catch (error) {
