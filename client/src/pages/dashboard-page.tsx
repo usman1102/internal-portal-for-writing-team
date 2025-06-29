@@ -167,7 +167,6 @@ export default function DashboardPage() {
         <DashboardHeader 
           title="Dashboard" 
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          notificationCount={3}
         />
         
         <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">

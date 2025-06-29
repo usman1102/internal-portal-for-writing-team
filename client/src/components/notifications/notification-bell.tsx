@@ -125,7 +125,18 @@ export function NotificationBell() {
         {notifications.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-center text-sm text-blue-600 hover:text-blue-700 cursor-pointer">
+            <DropdownMenuItem 
+              className="text-center text-sm text-blue-600 hover:text-blue-700 cursor-pointer"
+              onClick={async () => {
+                try {
+                  await fetch('/api/notifications/mark-all-read', { method: 'PATCH' });
+                  // Refetch notifications to update UI
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Failed to mark notifications as read:', error);
+                }
+              }}
+            >
               Mark all as read
             </DropdownMenuItem>
           </>
