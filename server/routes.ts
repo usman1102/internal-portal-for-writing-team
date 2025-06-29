@@ -438,7 +438,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
+        // Send notification for status change
+        await notificationService.notifyTaskStatusChanged(updatedTask!, req.body.status, req.user.id);
+      }
 
+      // Send notification for task assignment if assignedToId was updated
+      if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
+        await notificationService.notifyTaskAssigned(updatedTask!, req.user.id);
       }
       
       res.json(updatedTask);
@@ -514,6 +520,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const file = await storage.createFile(validatedData);
+
+      // Send notification for file upload
+      await notificationService.notifyFileUploaded(task, validatedData.fileName, req.user.id);
       
       res.status(201).json(file);
     } catch (error) {
@@ -697,6 +706,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
+
+      // Send notification for comment
+      await notificationService.notifyCommentAdded(task, req.user.id);
       
       res.status(201).json(comment);
     } catch (error) {
