@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import TasksPage from "@/pages/tasks-page";
 import AnalyticsPage from "@/pages/analytics-page";
 import TeamPage from "@/pages/team-page";
+import SettingsPage from "@/pages/settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { AuthGuard } from "./components/auth-guard";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/tasks" component={() => <TasksPage />} />
       <Route path="/analytics" component={() => <AnalyticsPage />} />
       <Route path="/team" component={() => <TeamPage />} />
+      <Route path="/settings" component={() => <SettingsPage />} />
       <Route component={NotFound} />
     </Switch>
   );
