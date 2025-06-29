@@ -132,6 +132,12 @@ Changelog:
   * Implemented deadline reminder service running hourly
   * Added notification API routes for fetching and managing notifications
   * Integrated notification system into dashboard header
+- June 29, 2025. Enhanced notification system with improved UX:
+  * Added individual tick buttons to mark notifications as read
+  * Enhanced notification messaging to include user names and context
+  * Made notifications clickable with automatic navigation to relevant tasks
+  * Added task IDs to all notification messages for better identification
+  * Implemented "Mark all as read" functionality with proper API integration
 ```
 
 ## User Preferences

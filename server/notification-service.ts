@@ -61,7 +61,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: recipient.id,
         title: "New Task Created",
-        message: `${createdByUser?.fullName || 'Someone'} created a new task: "${task.title}"`,
+        message: `${createdByUser?.fullName || 'Someone'} created a new task: "Task #${task.id}: ${task.title}"`,
         type: "task_created",
         taskId: task.id,
         triggeredByUserId: createdByUserId,
@@ -82,7 +82,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: recipient.id,
         title: "Task Assigned",
-        message: `${assignedByUser?.fullName || 'Someone'} assigned "${task.title}" to ${assignedToUser?.fullName || 'someone'}`,
+        message: `${assignedByUser?.fullName || 'Someone'} assigned "Task #${task.id}: ${task.title}" to ${assignedToUser?.fullName || 'someone'}`,
         type: "task_assigned",
         taskId: task.id,
         triggeredByUserId: assignedByUserId,
@@ -100,7 +100,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: recipient.id,
         title: "Task Status Updated",
-        message: `${changedByUser?.fullName || 'Someone'} changed "${task.title}" status to ${newStatus.replace('_', ' ')}`,
+        message: `${changedByUser?.fullName || 'Someone'} changed "Task #${task.id}: ${task.title}" status to ${newStatus.replace('_', ' ')}`,
         type: "task_status_changed",
         taskId: task.id,
         triggeredByUserId: changedByUserId,
@@ -118,7 +118,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: recipient.id,
         title: "New Comment Added",
-        message: `${commentedByUser?.fullName || 'Someone'} commented on "${task.title}"`,
+        message: `${commentedByUser?.fullName || 'Someone'} commented on "Task #${task.id}: ${task.title}"`,
         type: "comment_added",
         taskId: task.id,
         triggeredByUserId: commentedByUserId,
@@ -136,7 +136,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: recipient.id,
         title: "File Uploaded",
-        message: `${uploadedByUser?.fullName || 'Someone'} uploaded "${fileName}" to "${task.title}"`,
+        message: `${uploadedByUser?.fullName || 'Someone'} uploaded "${fileName}" to "Task #${task.id}: ${task.title}"`,
         type: "file_uploaded",
         taskId: task.id,
         triggeredByUserId: uploadedByUserId,
@@ -155,7 +155,7 @@ export class NotificationService {
     await storage.createNotification({
       userId: task.assignedToId,
       title: "Deadline Reminder",
-      message: `Your task "${task.title}" is due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+      message: `Your task "Task #${task.id}: ${task.title}" is due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
       type: "deadline_reminder",
       taskId: task.id,
       triggeredByUserId: null,
@@ -170,7 +170,7 @@ export class NotificationService {
       await storage.createNotification({
         userId: superadmin.id,
         title: "Deadline Reminder",
-        message: `${assignedUser?.fullName || 'Someone'}'s task "${task.title}" is due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+        message: `${assignedUser?.fullName || 'Someone'}'s task "Task #${task.id}: ${task.title}" is due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
         type: "deadline_reminder",
         taskId: task.id,
         triggeredByUserId: null,
