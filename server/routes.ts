@@ -2,17 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, insertNotificationSchema, UserRole, TaskStatus, NotificationType } from "@shared/schema";
-import { WebSocketServer, WebSocket } from "ws";
-import * as notificationService from "./notification-service";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
-
-
 
   // Users routes
   app.get("/api/users", async (req, res, next) => {
@@ -308,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const fileInfo of files) {
           try {
             // Create file record in database with actual content
-            const createdFile = await storage.createFile({
+            await storage.createFile({
               taskId: task.id,
               uploadedById: req.user.id,
               fileName: fileInfo.name,
@@ -318,18 +314,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               category: 'INSTRUCTION', // Files uploaded during task creation are instruction files
               isSubmission: false
             });
-            
-            // Send notification for file upload during task creation
-            try {
-              await notificationService.notifyFileUploaded(
-                task,
-                fileInfo.name,
-                req.user.id,
-                task.assignedById || undefined
-              );
-            } catch (notificationError) {
-              console.error('File upload notification error:', notificationError);
-            }
           } catch (fileError) {
             console.error('Error saving file info:', fileError);
             // Continue with other files even if one fails
@@ -344,14 +328,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'TASK_CREATED',
         description: `${req.user.fullName} created a new task: ${task.title}`
       });
-
-      // Send notifications for task creation
-      try {
-        await notificationService.notifyTaskCreated(task, req.user.id);
-      } catch (notificationError) {
-        console.error('Notification error:', notificationError);
-        // Continue with response even if notification fails
-      }
       
       res.status(201).json(task);
     } catch (error) {
@@ -454,35 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `${req.user.fullName} changed task status to ${req.body.status}: ${task.title}`
         });
 
-        // Send notifications for status change
-        try {
-          await notificationService.notifyTaskStatusChanged(
-            updatedTask!,
-            String(task.status || 'NEW'),
-            req.body.status,
-            req.user.id,
-            task.assignedById || undefined
-          );
-        } catch (notificationError) {
-          console.error('Notification error:', notificationError);
-        }
-      }
 
-      // Handle task assignment/unassignment notifications
-      if (req.body.assignedToId !== undefined && req.body.assignedToId !== task.assignedToId) {
-        if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
-          // Task assigned
-          try {
-            await notificationService.notifyTaskAssigned(
-              updatedTask!,
-              req.body.assignedToId,
-              req.user.id,
-              task.assignedById ?? undefined
-            );
-          } catch (notificationError) {
-            console.error('Notification error:', notificationError);
-          }
-        }
       }
       
       res.json(updatedTask);
@@ -558,26 +506,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const file = await storage.createFile(validatedData);
-
-      // Create activity for file upload
-      await storage.createActivity({
-        userId: req.user.id,
-        taskId: task.id,
-        action: 'FILE_UPLOADED',
-        description: `${req.user.fullName} uploaded file: ${validatedData.fileName}`
-      });
-
-      // Send notifications for file upload
-      try {
-        await notificationService.notifyFileUploaded(
-          task,
-          validatedData.fileName,
-          req.user.id,
-          task.assignedById || undefined
-        );
-      } catch (notificationError) {
-        console.error('File upload notification error:', notificationError);
-      }
       
       res.status(201).json(file);
     } catch (error) {
@@ -761,18 +689,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'COMMENT_ADDED',
         description: `${req.user.fullName} commented on: ${task.title}`
       });
-
-      // Send notifications for comment addition
-      try {
-        await notificationService.notifyCommentAdded(
-          task,
-          validatedData.content,
-          req.user.id,
-          task.assignedById || undefined
-        );
-      } catch (notificationError) {
-        console.error('Comment notification error:', notificationError);
-      }
       
       res.status(201).json(comment);
     } catch (error) {
@@ -952,182 +868,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notification Routes
-  app.get("/api/notifications", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const limit = parseInt(req.query.limit as string) || 50;
-      const notifications = await storage.getNotificationsByUser(req.user!.id, limit);
-      res.json(notifications);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get("/api/notifications/unread-count", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const count = await storage.getUnreadNotificationCount(req.user!.id);
-      res.json({ count });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/:id/read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notificationId = parseInt(req.params.id);
-      await storage.markNotificationAsRead(notificationId);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      await storage.markAllNotificationsAsRead(req.user!.id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
 
 
   const httpServer = createServer(app);
-  
-  // WebSocket server for real-time notifications
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  wss.on('connection', (ws) => {
-    console.log('WebSocket connection established');
-    
-    let userId: number | null = null;
-    
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'auth' && data.userId) {
-          userId = Number(data.userId);
-          notificationService.addWebSocketConnection(userId, ws);
-          console.log(`WebSocket authenticated for user ${userId}`);
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      if (userId !== null) {
-        notificationService.removeWebSocketConnection(userId, ws);
-      }
-      console.log('WebSocket connection closed');
-    });
-  });
-
-  // Notification routes
-  app.get("/api/notifications", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notifications = await storage.getNotificationsByUser(req.user.id);
-      res.json(notifications);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get("/api/notifications/unread-count", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const count = await storage.getUnreadNotificationCount(req.user.id);
-      res.json({ count });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/:id/read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const notificationId = parseInt(req.params.id);
-      if (isNaN(notificationId)) {
-        return res.status(400).send("Invalid notification ID");
-      }
-
-      // Verify notification belongs to user
-      const notification = await storage.getNotification(notificationId);
-      if (!notification || notification.userId !== req.user.id) {
-        return res.status(404).send("Notification not found");
-      }
-
-      await storage.markNotificationAsRead(notificationId);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      await storage.markAllNotificationsAsRead(req.user.id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Push subscription routes
-  app.post("/api/push-subscription", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const subscription = await storage.createPushSubscription({
-        userId: req.user.id,
-        endpoint: req.body.endpoint,
-        p256dh: req.body.keys?.p256dh || '',
-        auth: req.body.keys?.auth || ''
-      });
-      
-      res.json(subscription);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.delete("/api/push-subscription", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      await storage.deletePushSubscription(req.user.id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // VAPID public key endpoint
-  app.get("/api/vapid-public-key", async (req, res, next) => {
-    try {
-      res.json({ 
-        publicKey: process.env.VAPID_PUBLIC_KEY || 'BOBGjAPwsmmYRwf_rjYt0JPqcJUi-kNh0Rn6O_qUFYWc-uJhrGJ8Z0KJVLhVC4WhCVBxoLMrixOjZLxNP8HPkQg'
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
 
   return httpServer;
 }

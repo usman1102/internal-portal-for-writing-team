@@ -5,7 +5,6 @@ import {
   comments, 
   activities, 
   notifications,
-  pushSubscriptions,
   teams,
   type User, 
   type InsertUser,
@@ -17,15 +16,11 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
-  type Notification,
-  type InsertNotification,
-  type PushSubscriptionRecord,
-  type InsertPushSubscription,
+
   type Team,
   type InsertTeam,
   UserRole,
-  TaskStatus,
-  NotificationType
+  TaskStatus
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -76,19 +71,7 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 
-  // Notification methods
-  getNotification(id: number): Promise<Notification | undefined>;
-  getNotificationsByUser(userId: number, limit?: number): Promise<Notification[]>;
-  getUnreadNotificationCount(userId: number): Promise<number>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<void>;
-  markAllNotificationsAsRead(userId: number): Promise<void>;
 
-  // Push subscription methods
-  getPushSubscription(userId: number): Promise<PushSubscriptionRecord | undefined>;
-  createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscriptionRecord>;
-  deletePushSubscription(userId: number): Promise<void>;
-  getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]>;
 
   // Team methods
   getTeam(id: number): Promise<Team | undefined>;
@@ -394,57 +377,7 @@ export class MemStorage implements IStorage {
     this.teamsData.delete(id);
   }
 
-  // Notification methods (MemStorage implementation)
-  async getNotification(id: number): Promise<Notification | undefined> {
-    // Memory storage not implemented for notifications
-    return undefined;
-  }
 
-  async getNotificationsByUser(userId: number, limit: number = 50): Promise<Notification[]> {
-    return [];
-  }
-
-  async getUnreadNotificationCount(userId: number): Promise<number> {
-    return 0;
-  }
-
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
-    // Return a mock notification for memory storage
-    return {
-      id: 1,
-      ...notificationData,
-      createdAt: new Date()
-    } as Notification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    // No-op for memory storage
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    // No-op for memory storage
-  }
-
-  // Push subscription methods (MemStorage implementation)
-  async getPushSubscription(userId: number): Promise<PushSubscriptionRecord | undefined> {
-    return undefined;
-  }
-
-  async createPushSubscription(subscriptionData: InsertPushSubscription): Promise<PushSubscriptionRecord> {
-    return {
-      id: 1,
-      ...subscriptionData,
-      createdAt: new Date()
-    } as PushSubscriptionRecord;
-  }
-
-  async deletePushSubscription(userId: number): Promise<void> {
-    // No-op for memory storage
-  }
-
-  async getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]> {
-    return [];
-  }
 }
 
 // PostgreSQL Database Storage Implementation
@@ -646,69 +579,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(teams).where(eq(teams.id, id));
   }
 
-  // Notification methods
-  async getNotification(id: number): Promise<Notification | undefined> {
-    const result = await db.select().from(notifications).where(eq(notifications.id, id)).limit(1);
-    return result[0];
-  }
 
-  async getNotificationsByUser(userId: number, limit: number = 50): Promise<Notification[]> {
-    return await db.select()
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt))
-      .limit(limit);
-  }
-
-  async getUnreadNotificationCount(userId: number): Promise<number> {
-    const result = await db.select().from(notifications)
-      .where(and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, false)
-      ));
-    return result.length;
-  }
-
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notificationData).returning();
-    return result[0];
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, id));
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<void> {
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
-  }
-
-  // Push subscription methods
-  async getPushSubscription(userId: number): Promise<PushSubscriptionRecord | undefined> {
-    const result = await db.select().from(pushSubscriptions)
-      .where(eq(pushSubscriptions.userId, userId))
-      .limit(1);
-    return result[0];
-  }
-
-  async createPushSubscription(subscriptionData: InsertPushSubscription): Promise<PushSubscriptionRecord> {
-    // Delete existing subscription for this user first
-    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, subscriptionData.userId));
-    
-    const result = await db.insert(pushSubscriptions).values(subscriptionData).returning();
-    return result[0];
-  }
-
-  async deletePushSubscription(userId: number): Promise<void> {
-    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
-  }
-
-  async getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]> {
-    return await db.select().from(pushSubscriptions);
-  }
 }
 
 export const storage = new DatabaseStorage();

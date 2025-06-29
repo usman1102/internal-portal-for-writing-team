@@ -9,21 +9,18 @@ import DashboardPage from "@/pages/dashboard-page";
 import TasksPage from "@/pages/tasks-page";
 import AnalyticsPage from "@/pages/analytics-page";
 import TeamPage from "@/pages/team-page";
-import SettingsPage from "@/pages/settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
-import { AuthGuard } from "./components/auth-guard";
 import { ThemeProvider } from "./hooks/use-theme";
 
 function Router() {
   return (
     <Switch>
+      <ProtectedRoute path="/" component={() => <DashboardPage />} />
+      <ProtectedRoute path="/tasks" component={() => <TasksPage />} />
+      <ProtectedRoute path="/analytics" component={() => <AnalyticsPage />} />
+      <ProtectedRoute path="/team" component={() => <TeamPage />} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/" component={() => <DashboardPage />} />
-      <Route path="/tasks" component={() => <TasksPage />} />
-      <Route path="/analytics" component={() => <AnalyticsPage />} />
-      <Route path="/team" component={() => <TeamPage />} />
-      <Route path="/settings" component={() => <SettingsPage />} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -36,9 +33,7 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <Toaster />
-            <AuthGuard>
-              <Router />
-            </AuthGuard>
+            <Router />
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>

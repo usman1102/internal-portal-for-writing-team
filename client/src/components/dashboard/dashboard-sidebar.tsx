@@ -13,7 +13,6 @@ import {
   BarChart3
 } from "lucide-react";
 import { UserProfileDialog } from "@/components/user/user-profile-dialog";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface SidebarLinkProps {
   href: string;
@@ -79,22 +78,19 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         </div>
 
         <div className="p-2">
-          <div className="p-2 mb-2 flex items-center justify-between hover:bg-gray-100 rounded-md transition-colors">
-            <div 
-              className="flex items-center cursor-pointer"
-              onClick={() => setShowUserProfile(true)}
-            >
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-                <span>{getInitials(user.fullName)}</span>
-              </div>
-              <div className="ml-2">
-                <p className="text-sm font-medium">{user.fullName}</p>
-                <p className="text-xs text-gray-500">
-                  {user.role.replace('_', ' ')}
-                </p>
-              </div>
+          <div 
+            className="p-2 mb-2 flex items-center cursor-pointer hover:bg-gray-100 rounded-md transition-colors"
+            onClick={() => setShowUserProfile(true)}
+          >
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+              <span>{getInitials(user.fullName)}</span>
             </div>
-            <NotificationBell />
+            <div className="ml-2">
+              <p className="text-sm font-medium">{user.fullName}</p>
+              <p className="text-xs text-gray-500">
+                {user.role.replace('_', ' ')}
+              </p>
+            </div>
           </div>
         </div>
 

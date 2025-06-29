@@ -103,38 +103,16 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Notification types enum
-export enum NotificationType {
-  TASK_CREATED = 'TASK_CREATED',
-  TASK_ASSIGNED = 'TASK_ASSIGNED',
-  TASK_UNASSIGNED = 'TASK_UNASSIGNED',
-  TASK_STATUS_CHANGED = 'TASK_STATUS_CHANGED',
-  COMMENT_ADDED = 'COMMENT_ADDED',
-  FILE_UPLOADED = 'FILE_UPLOADED',
-  DEADLINE_REMINDER = 'DEADLINE_REMINDER'
-}
-
 // Notifications schema
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  type: text("type").notNull(), // NotificationType values
+  type: text("type").notNull(), // 'task_created', 'task_assigned', 'status_changed', 'file_uploaded', 'team_member_added'
   title: text("title").notNull(),
   message: text("message").notNull(),
   relatedTaskId: integer("related_task_id").references(() => tasks.id, { onDelete: "cascade" }),
   relatedUserId: integer("related_user_id").references(() => users.id, { onDelete: "cascade" }),
   isRead: boolean("is_read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  metadata: jsonb("metadata"), // Additional data like old/new status, etc.
-});
-
-// Push subscriptions for PWA notifications
-export const pushSubscriptions = pgTable("push_subscriptions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  endpoint: text("endpoint").notNull(),
-  p256dh: text("p256dh").notNull(),
-  auth: text("auth").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -166,14 +144,6 @@ export type Comment = typeof comments.$inferSelect;
 export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
-
-export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type Notification = typeof notifications.$inferSelect;
-
-export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
-export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
-export type PushSubscriptionRecord = typeof pushSubscriptions.$inferSelect;
 
 
 
