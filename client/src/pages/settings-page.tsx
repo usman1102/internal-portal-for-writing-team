@@ -15,18 +15,17 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Settings, User as UserIcon } from "lucide-react";
 
-const settingsFormSchema = insertUserSchema.pick({
-  username: true,
-  fullName: true,
-  email: true,
-  role: true,
-  status: true,
-  teamId: true,
-  dateOfBirth: true,
-  city: true,
-  degree: true,
-  theme: true,
-}).extend({
+const settingsFormSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Valid email is required"),
+  role: z.enum(["SUPERADMIN", "SALES", "TEAM_LEAD", "WRITER", "PROOFREADER"]),
+  status: z.string().optional(),
+  teamId: z.number().optional(),
+  dateOfBirth: z.string().optional(),
+  city: z.string().optional(),
+  degree: z.string().optional(),
+  theme: z.string().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
 });
@@ -161,7 +160,7 @@ export default function SettingsPage() {
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -175,7 +174,7 @@ export default function SettingsPage() {
                         <FormItem>
                           <FormLabel>Date of Birth</FormLabel>
                           <FormControl>
-                            <Input {...field} type="date" />
+                            <Input {...field} type="date" value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -189,7 +188,7 @@ export default function SettingsPage() {
                         <FormItem>
                           <FormLabel>Degree</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -202,7 +201,7 @@ export default function SettingsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Theme</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select theme" />
@@ -227,7 +226,7 @@ export default function SettingsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
