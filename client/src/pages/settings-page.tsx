@@ -15,10 +15,21 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Settings, User as UserIcon } from "lucide-react";
 
-const settingsFormSchema = insertUserSchema.extend({
+const settingsFormSchema = insertUserSchema.pick({
+  username: true,
+  fullName: true,
+  email: true,
+  role: true,
+  status: true,
+  teamId: true,
+  dateOfBirth: true,
+  city: true,
+  degree: true,
+  theme: true,
+}).extend({
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
-}).omit({ id: true, password: true });
+});
 
 export default function SettingsPage() {
   const { user } = useAuth();

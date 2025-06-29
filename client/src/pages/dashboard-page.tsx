@@ -10,7 +10,6 @@ import { TaskTable } from "@/components/dashboard/task-table";
 import { TeamMembers } from "@/components/dashboard/team-members";
 
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { PushNotificationSetup } from "@/components/notifications/push-notification-setup";
 import {
   ClipboardList,
   Users,
@@ -230,10 +229,7 @@ export default function DashboardPage() {
               onViewAllActivity={() => {}}
             />
             
-            {/* Push Notification Setup - Only for mobile PWA users */}
-            <div className="mt-6">
-              <PushNotificationSetup />
-            </div>
+
           </div>
         </main>
       </div>
