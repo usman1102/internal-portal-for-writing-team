@@ -30,14 +30,10 @@ This is a full-stack web application built for managing freelance writing tasks 
 
 ## Key Components
 
-### Progressive Web App (PWA) Features
-- **Chrome-Only PWA**: PWA functionality exclusively enabled on mobile Chrome browsers (Android/iOS)
-- **Safari Web Access**: Safari on iOS loads as regular web app without PWA installation
-- **Desktop Web-Only**: Desktop users access the portal as a standard web application
-- **Smart Device Detection**: Chrome browser detection prevents PWA features in Safari
-- **Install Prompts**: Native app-like installation prompts only in mobile Chrome
-- **Offline Capability**: Service worker for caching and offline functionality
-- **Custom App Icon**: Uses blue "P" logo with proper sizing for mobile app icon
+### Web Application Features
+- **Browser-Based Access**: Pure web application accessible through any modern browser
+- **Responsive Design**: Optimized for desktop, tablet, and mobile browsers
+- **Cross-Platform Compatibility**: Works on all operating systems and browsers
 
 ### Authentication & Authorization
 - **Multi-role System**: 5 distinct user roles with different permissions
@@ -63,6 +59,8 @@ This is a full-stack web application built for managing freelance writing tasks 
 - **Component Library**: Comprehensive UI component system using Radix primitives
 - **Toast Notifications**: User feedback system for actions and errors
 - **Loading States**: Proper loading and error state management
+- **In-App Notifications**: Real-time notification system with WebSocket connections
+- **Notification Bell**: Comprehensive notification center with read/unread status tracking
 
 ## Data Flow
 
@@ -150,3 +148,11 @@ Changelog:
   - Background notifications confirmed working when app closed and device locked
   - User-friendly permission request flow with clear explanations
   - Final system ready for production deployment
+- June 29, 2025. Removed PWA functionality and push notification permissions:
+  - Converted from PWA to standard browser-based web application
+  - Removed service worker, manifest file, and PWA installation prompts
+  - Removed push notification permission requests and setup components
+  - Kept in-app notification system with WebSocket real-time updates
+  - Maintained notification bell with comprehensive notification center
+  - Updated settings page to remove push notification controls
+  - Simplified architecture for browser-only deployment

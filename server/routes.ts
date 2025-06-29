@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, insertNotificationSchema, insertPushSubscriptionSchema, UserRole, TaskStatus, NotificationType } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, insertNotificationSchema, UserRole, TaskStatus, NotificationType } from "@shared/schema";
 import { WebSocketServer, WebSocket } from "ws";
 import * as notificationService from "./notification-service";
 import { z } from "zod";
@@ -12,27 +12,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
-  // Serve PWA files with correct MIME types
-  app.get("/manifest.json", (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.sendFile("manifest.json", { root: "public" });
-  });
 
-  app.get("/sw.js", (req, res) => {
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Service-Worker-Allowed', '/');
-    res.sendFile("sw.js", { root: "public" });
-  });
-
-  app.get("/icon-192.png", (req, res) => {
-    res.setHeader('Content-Type', 'image/png');
-    res.sendFile("icon-192.png", { root: "public" });
-  });
-
-  app.get("/icon-512.png", (req, res) => {
-    res.setHeader('Content-Type', 'image/png');
-    res.sendFile("icon-512.png", { root: "public" });
-  });
 
   // Users routes
   app.get("/api/users", async (req, res, next) => {
@@ -1019,35 +999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Push subscription routes
-  app.post("/api/push-subscription", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      const subscriptionData = {
-        userId: req.user!.id,
-        endpoint: req.body.endpoint,
-        p256dh: req.body.keys.p256dh,
-        auth: req.body.keys.auth
-      };
-      
-      const subscription = await storage.createPushSubscription(subscriptionData);
-      res.json(subscription);
-    } catch (error) {
-      next(error);
-    }
-  });
 
-  app.delete("/api/push-subscription", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-      
-      await storage.deletePushSubscription(req.user!.id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
 
   const httpServer = createServer(app);
   
