@@ -61,6 +61,14 @@ The application follows a modern full-stack architecture with clear separation b
 - Real-time activity feeds for transparency
 - Performance analytics and reporting capabilities
 
+### Push Notification System
+- Real-time notifications for all key system events
+- Role-based notification targeting (superadmin receives all notifications)
+- Notification bell with unread count badge in dashboard header
+- Automated deadline reminders (2 days and 1 day before due date)
+- Notification triggers for task creation, assignment, status changes, comments, and file uploads
+- Database-backed notification storage with read/unread status tracking
+
 ## Data Flow
 
 1. **Authentication Flow**: Users log in through the auth page, creating a session managed by Express-session with PostgreSQL storage
@@ -116,6 +124,14 @@ The application supports both local development and cloud deployment, with prope
 ```
 Changelog:
 - June 29, 2025. Initial setup
+- June 29, 2025. Implemented comprehensive push notification system:
+  * Added notification bell component with unread count badge
+  * Created notification database schema with proper relationships
+  * Implemented notification service with role-based targeting
+  * Added notification triggers for task creation, assignment, status changes, comments, and file uploads
+  * Implemented deadline reminder service running hourly
+  * Added notification API routes for fetching and managing notifications
+  * Integrated notification system into dashboard header
 ```
 
 ## User Preferences
