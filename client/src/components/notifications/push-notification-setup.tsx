@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { TestPushButton } from "./test-push-button";
 import { PushStatusIndicator } from "./push-status-indicator";
+import { PermissionPrompt } from "./permission-prompt";
 // Convert base64 VAPID key to Uint8Array
 function urlB64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -67,6 +68,7 @@ export function PushNotificationSetup() {
   const [pushSubscription, setPushSubscription] = useState<PushSubscription | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
 
   // Check support and current state
   useEffect(() => {
@@ -76,6 +78,11 @@ export function PushNotificationSetup() {
       
       if ('Notification' in window) {
         setNotificationPermission(Notification.permission);
+        
+        // Show permission prompt if not yet decided
+        if (Notification.permission === 'default') {
+          setShowPermissionPrompt(true);
+        }
       }
 
       if (supported) {
@@ -99,21 +106,28 @@ export function PushNotificationSetup() {
     mutationFn: async () => {
       setSetupError(null);
       
-      // Request permission
+      if (!isPushNotificationSupported()) {
+        throw new Error('Push notifications not supported on this device');
+      }
+
+      // Request permission first
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       
       if (permission !== 'granted') {
-        throw new Error('Notification permission denied');
+        throw new Error('Notification permission denied. Please enable notifications in your browser settings.');
       }
 
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
       
+      // Get VAPID public key
+      const vapidKey = await getVapidPublicKey();
+      
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(await getVapidPublicKey())
+        applicationServerKey: urlB64ToUint8Array(vapidKey)
       });
 
       // Send subscription to server
@@ -146,11 +160,21 @@ export function PushNotificationSetup() {
     }
   });
 
-  // Only show on mobile Chrome or PWA
-  const shouldShow = isMobileDevice() && (isChromeBrowser() || isPWA());
-  
-  if (!user || !isSupported || !shouldShow) {
-    return null; // Don't show the component if not applicable
+  // Show component for all supported devices during testing
+  if (!user || !isSupported) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Push Notifications
+          </CardTitle>
+          <CardDescription>
+            Push notifications are not supported on this device/browser
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   const isSubscribed = pushSubscription !== null;
