@@ -60,4 +60,16 @@ export function registerNotificationRoutes(app: Express) {
       next(error);
     }
   });
+
+  // Mark all notifications as read
+  app.patch("/api/notifications/mark-all-read", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.sendStatus(200);
+    } catch (error) {
+      next(error);
+    }
+  });
 }
