@@ -8,6 +8,8 @@ import {
   teams,
   type User, 
   type InsertUser,
+  type Notification,
+  type InsertNotification,
   type Task,
   type InsertTask,
   type File,
@@ -385,7 +387,30 @@ export class MemStorage implements IStorage {
     this.teamsData.delete(id);
   }
 
+  // Notification methods (MemStorage - placeholder implementation)
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return undefined;
+  }
 
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return [];
+  }
+
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    return 0;
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    throw new Error("Notifications not supported in MemStorage");
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    // Not implemented for MemStorage
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    // Not implemented for MemStorage
+  }
 }
 
 // PostgreSQL Database Storage Implementation
@@ -587,7 +612,45 @@ export class DatabaseStorage implements IStorage {
     await db.delete(teams).where(eq(teams.id, id));
   }
 
+  // Notification methods
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    return notification || undefined;
+  }
 
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
+  }
+
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    const result = await db.select({ count: count() })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    return result[0]?.count || 0;
+  }
+
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(notificationData as any)
+      .returning();
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
+  }
 }
 
 export const storage = new DatabaseStorage();
