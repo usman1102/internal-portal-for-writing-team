@@ -71,6 +71,14 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 
+  // Notification methods
+  getNotification(id: number): Promise<Notification | undefined>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<void>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
+
 
 
   // Team methods

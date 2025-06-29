@@ -107,11 +107,11 @@ export const activities = pgTable("activities", {
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  type: text("type").notNull(), // 'task_created', 'task_assigned', 'status_changed', 'file_uploaded', 'team_member_added'
   title: text("title").notNull(),
   message: text("message").notNull(),
-  relatedTaskId: integer("related_task_id").references(() => tasks.id, { onDelete: "cascade" }),
-  relatedUserId: integer("related_user_id").references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'task_created', 'task_assigned', 'task_status_changed', 'comment_added', 'file_uploaded', 'deadline_reminder'
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  triggeredByUserId: integer("triggered_by_user_id").references(() => users.id, { onDelete: "cascade" }),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -144,6 +144,10 @@ export type Comment = typeof comments.$inferSelect;
 export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
 
 
 
