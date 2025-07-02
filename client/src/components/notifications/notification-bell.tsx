@@ -95,7 +95,7 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
+      <DropdownMenuContent className="w-96" align="end">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {unreadCount > 0 && (
@@ -128,9 +128,9 @@ export function NotificationBell() {
                   <span className="text-lg flex-shrink-0 mt-0.5">
                     {getNotificationIcon(notification.type)}
                   </span>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-medium text-sm leading-tight flex-1">
+                      <h4 className="font-medium text-sm leading-tight">
                         {notification.title}
                       </h4>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -141,7 +141,7 @@ export function NotificationBell() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 w-5 p-0 hover:bg-green-100"
+                            className="h-6 w-6 p-0 hover:bg-green-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               markAsReadMutation.mutate(notification.id);
@@ -152,8 +152,7 @@ export function NotificationBell() {
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600 mb-1 leading-normal break-words whitespace-normal word-wrap-break-word pr-1"
-                       style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                    <p className="text-xs text-gray-600 mb-1 leading-relaxed whitespace-normal break-words">
                       {notification.message}
                     </p>
                     <p className="text-xs text-gray-400">
