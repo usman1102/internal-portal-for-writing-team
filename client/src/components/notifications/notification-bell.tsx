@@ -128,35 +128,37 @@ export function NotificationBell() {
                   <span className="text-lg flex-shrink-0 mt-0.5">
                     {getNotificationIcon(notification.type)}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-sm truncate">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h4 className="font-medium text-sm leading-tight">
                         {notification.title}
                       </h4>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                      )}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        )}
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-green-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsReadMutation.mutate(notification.id);
+                            }}
+                          >
+                            <Check className="h-3 w-3 text-green-600" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+                    <p className="text-xs text-gray-600 mb-1 leading-relaxed whitespace-normal break-words">
                       {notification.message}
                     </p>
                     <p className="text-xs text-gray-400">
                       {formatDateTime(notification.createdAt!)}
                     </p>
                   </div>
-                  {!notification.isRead && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-green-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAsReadMutation.mutate(notification.id);
-                      }}
-                    >
-                      <Check className="h-3 w-3 text-green-600" />
-                    </Button>
-                  )}
                 </div>
               </DropdownMenuItem>
             ))}
