@@ -12,6 +12,7 @@ import TeamPage from "@/pages/team-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { ThemeProvider } from "./hooks/use-theme";
+import { BirthdayPopup } from "./components/celebration/birthday-popup";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <BirthdayPopup />
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>
