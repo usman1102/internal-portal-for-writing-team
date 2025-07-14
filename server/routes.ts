@@ -449,6 +449,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTask = await storage.updateTask(taskId, updateData);
       
+      // Handle payment updates when budget amounts are changed
+      if (updatedTask && (req.body.writerBudget !== undefined || req.body.proofreaderBudget !== undefined || req.body.tlBudget !== undefined)) {
+        // Update writer payment amount if it exists
+        if (updatedTask.assignedToId && req.body.writerBudget !== undefined) {
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
+          const writerPayment = existingPayments.find(p => p.taskId === taskId);
+          if (writerPayment) {
+            await storage.updatePaymentAmount(writerPayment.id, req.body.writerBudget || 0);
+          }
+        }
+
+        // Update proofreader payment amount if it exists
+        if (updatedTask.proofreaderId && req.body.proofreaderBudget !== undefined) {
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
+          const proofreaderPayment = existingPayments.find(p => p.taskId === taskId);
+          if (proofreaderPayment) {
+            await storage.updatePaymentAmount(proofreaderPayment.id, req.body.proofreaderBudget || 0);
+          }
+        }
+
+        // Update team lead payment amount if it exists
+        if (updatedTask.assignedToId && req.body.tlBudget !== undefined) {
+          const writer = await storage.getUser(updatedTask.assignedToId);
+          if (writer && writer.teamId) {
+            const team = await storage.getTeam(writer.teamId);
+            if (team && team.teamLeadId) {
+              const existingPayments = await storage.getPaymentsByUser(team.teamLeadId);
+              const teamLeadPayment = existingPayments.find(p => p.taskId === taskId);
+              if (teamLeadPayment) {
+                await storage.updatePaymentAmount(teamLeadPayment.id, req.body.tlBudget || 0);
+              }
+            }
+          }
+        }
+      }
+      
       // Handle payment creation when task is completed or submitted
       if (updatedTask && req.body.status && (req.body.status === 'COMPLETED' || req.body.status === 'SUBMITTED')) {
         // Create payment for writer if assigned

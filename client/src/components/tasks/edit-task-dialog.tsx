@@ -80,10 +80,10 @@ export function EditTaskDialog({
     user.role === UserRole.PROOFREADER
   );
 
-  // Check if current user can see budget fields (superadmin or relevant team lead)
+  // Check if current user can see budget fields (superadmin or any team lead)
   const canSeeBudget = currentUser && (
     currentUser.role === UserRole.SUPERADMIN ||
-    (currentUser.role === UserRole.TEAM_LEAD && task.assignedById === currentUser.id)
+    currentUser.role === UserRole.TEAM_LEAD
   );
 
   const form = useForm<z.infer<typeof formSchema>>({

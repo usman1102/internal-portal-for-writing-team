@@ -90,6 +90,7 @@ export interface IStorage {
   getAllPayments(): Promise<Payment[]>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined>;
+  updatePaymentAmount(id: number, amount: number): Promise<Payment | undefined>;
   deletePayment(id: number): Promise<void>;
 
   // Team methods
@@ -442,6 +443,10 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  async updatePaymentAmount(id: number, amount: number): Promise<Payment | undefined> {
+    return undefined;
+  }
+
   async deletePayment(id: number): Promise<void> {
     // Not implemented for MemStorage
   }
@@ -751,6 +756,14 @@ export class DatabaseStorage implements IStorage {
         status,
         paidAt: status === PaymentStatus.PAID ? new Date() : null
       })
+      .where(eq(payments.id, id))
+      .returning();
+    return payment || undefined;
+  }
+
+  async updatePaymentAmount(id: number, amount: number): Promise<Payment | undefined> {
+    const [payment] = await db.update(payments)
+      .set({ amount })
       .where(eq(payments.id, id))
       .returning();
     return payment || undefined;
