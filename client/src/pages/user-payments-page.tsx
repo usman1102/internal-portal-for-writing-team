@@ -125,20 +125,18 @@ export default function UserPaymentsPage() {
 
   // Check if user has permission to view this user's payments
   const canViewPayments = () => {
-    if (!user || !targetUser) return false;
+    if (!user) return false;
     
     // Superadmin can view all payments
     if (user.role === UserRole.SUPERADMIN) return true;
     
     // Team leads can view their team members' payments
     if (user.role === UserRole.TEAM_LEAD) {
-      // For team leads, we need to check if they lead a team that contains the target user
-      // This will be handled by the backend API call
       return true; // Let the backend handle the team membership check
     }
     
     // Users can view their own payments
-    if (user.id === targetUser.id) return true;
+    if (user.id === parseInt(userId || '0')) return true;
     
     return false;
   };
@@ -226,9 +224,14 @@ export default function UserPaymentsPage() {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Team
                 </Button>
-                <h1 className="text-2xl font-bold">
-                  {targetUser?.fullName}'s Payments
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold">
+                    {targetUser?.fullName}'s Payments
+                  </h1>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                    Beta
+                  </Badge>
+                </div>
                 <p className="text-gray-600">Payment records for {targetUser?.fullName}</p>
               </div>
             </div>

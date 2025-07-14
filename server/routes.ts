@@ -484,13 +484,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
+
+      // Handle payment deletion when task status is changed away from COMPLETED/SUBMITTED
+      if (updatedTask && req.body.status && req.body.status !== 'COMPLETED' && req.body.status !== 'SUBMITTED' && task.status && (task.status === 'COMPLETED' || task.status === 'SUBMITTED')) {
+        // Remove payment records for this task
+        const allPayments = await storage.getAllPayments();
+        const taskPayments = allPayments.filter(p => p.taskId === taskId);
+        
+        for (const payment of taskPayments) {
+          await storage.deletePayment(payment.id);
+        }
+      }
       
       // Handle payment creation when task is completed or submitted
       if (updatedTask && req.body.status && (req.body.status === 'COMPLETED' || req.body.status === 'SUBMITTED')) {
-        // Create payment for writer if assigned
+        // First, check if payments already exist for this task to avoid duplicates
+        const allPayments = await storage.getAllPayments();
+        const existingTaskPayments = allPayments.filter(p => p.taskId === taskId);
+        
+        // Create payment for writer if assigned and no existing payment
         if (updatedTask.assignedToId) {
-          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
-          const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
+          const hasWriterPayment = existingTaskPayments.some(p => p.userId === updatedTask.assignedToId);
           
           if (!hasWriterPayment) {
             await storage.createPayment({
@@ -503,10 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Create payment for proofreader if assigned
+        // Create payment for proofreader if assigned and no existing payment
         if (updatedTask.proofreaderId) {
-          const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
-          const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
+          const hasProofreaderPayment = existingTaskPayments.some(p => p.userId === updatedTask.proofreaderId);
           
           if (!hasProofreaderPayment) {
             await storage.createPayment({
@@ -519,14 +532,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Create payment for team lead (writer's team lead) if writer is assigned
+        // Create payment for team lead (writer's team lead) if writer is assigned and no existing payment
         if (updatedTask.assignedToId) {
           const writer = await storage.getUser(updatedTask.assignedToId);
           if (writer && writer.teamId) {
             const team = await storage.getTeam(writer.teamId);
             if (team && team.teamLeadId) {
-              const existingPayments = await storage.getPaymentsByUser(team.teamLeadId);
-              const hasTeamLeadPayment = existingPayments.some(p => p.taskId === taskId);
+              const hasTeamLeadPayment = existingTaskPayments.some(p => p.userId === team.teamLeadId);
               
               if (!hasTeamLeadPayment) {
                 await storage.createPayment({

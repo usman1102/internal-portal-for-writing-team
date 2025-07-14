@@ -165,7 +165,12 @@ export default function PaymentsPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold">Payments</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold">Payments</h1>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                    Beta
+                  </Badge>
+                </div>
                 <p className="text-gray-600">View and manage your payment records</p>
               </div>
             </div>
