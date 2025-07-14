@@ -55,11 +55,15 @@ export const tasks = pgTable("tasks", {
   clientName: text("client_name"),
   assignedToId: integer("assigned_to_id").references(() => users.id, { onDelete: "set null" }),
   assignedById: integer("assigned_by_id").references(() => users.id, { onDelete: "set null" }),
+  proofreaderId: integer("proofreader_id").references(() => users.id, { onDelete: "set null" }),
   status: text("status").$type<TaskStatus>().default(TaskStatus.NEW),
   deadline: timestamp("deadline"),
   submissionDate: timestamp("submission_date"),
   createdAt: timestamp("created_at").defaultNow(),
   budget: doublePrecision("budget"),
+  writerBudget: doublePrecision("writer_budget"),
+  proofreaderBudget: doublePrecision("proofreader_budget"),
+  tlBudget: doublePrecision("tl_budget"),
 });
 
 // File Categories
@@ -128,7 +132,11 @@ export type User = typeof users.$inferSelect;
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, assignedToId: true }).extend({
   deadline: z.string().optional().transform((val) => val ? new Date(val) : undefined),
   wordCount: z.number().positive().optional(),
-  clientName: z.string().min(1, "Client name is required")
+  clientName: z.string().min(1, "Client name is required"),
+  proofreaderId: z.number().nullable().optional(),
+  writerBudget: z.number().positive().optional(),
+  proofreaderBudget: z.number().positive().optional(),
+  tlBudget: z.number().positive().optional(),
 });
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;

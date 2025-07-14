@@ -138,6 +138,18 @@ Changelog:
   * Made notifications clickable with automatic navigation to relevant tasks
   * Added task IDs to all notification messages for better identification
   * Implemented "Mark all as read" functionality with proper API integration
+- July 14, 2025. Added birthday celebration popup:
+  * Created one-time birthday celebration popup with beautiful animations
+  * Added localStorage tracking to show popup only once per user
+  * Implemented gradient background, emojis, and floating confetti effects
+  * Added bouncy entrance animation with scale and rotation
+- July 14, 2025. Enhanced task management with proofreader assignment and budgeting:
+  * Added proofreader assignment field to tasks (proofreaderId)
+  * Added budget fields: writer_budget, proofreader_budget, tl_budget (in PKR)
+  * Updated edit task dialog with separate writer and proofreader assignment dropdowns
+  * Implemented role-based access control for budget fields (superadmin and relevant team leads only)
+  * Updated database schema with new task columns
+  * Enhanced task editing interface with responsive grid layout for assignments and budgets
 ```
 
 ## User Preferences
