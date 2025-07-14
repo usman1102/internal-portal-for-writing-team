@@ -298,7 +298,9 @@ export default function UserPaymentsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment, index) => (
+                      {payments
+                        .sort((a, b) => a.taskId - b.taskId)
+                        .map((payment, index) => (
                         <TableRow key={payment.id}>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>#{payment.taskId}</TableCell>

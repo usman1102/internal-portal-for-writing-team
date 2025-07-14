@@ -33,7 +33,7 @@ import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { db, pool } from "./db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, asc, count } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -712,7 +712,7 @@ export class DatabaseStorage implements IStorage {
     .from(payments)
     .innerJoin(tasks, eq(payments.taskId, tasks.id))
     .where(eq(payments.userId, userId))
-    .orderBy(desc(payments.createdAt));
+    .orderBy(asc(payments.taskId));
   }
 
   async getAllPayments(): Promise<Payment[]> {
@@ -734,7 +734,7 @@ export class DatabaseStorage implements IStorage {
     })
     .from(payments)
     .innerJoin(tasks, eq(payments.taskId, tasks.id))
-    .orderBy(desc(payments.createdAt));
+    .orderBy(asc(payments.taskId));
   }
 
   async createPayment(paymentData: InsertPayment): Promise<Payment> {
