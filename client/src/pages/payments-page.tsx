@@ -22,13 +22,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Payment, PaymentStatus, UserRole, Task } from "@shared/schema";
-import { DollarSign, CreditCard } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 
 interface PaymentWithTask extends Payment {
   task: Task;
 }
 
 export default function PaymentsPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -72,6 +75,8 @@ export default function PaymentsPage() {
     .filter(p => p.status === PaymentStatus.UNPAID)
     .reduce((sum, p) => sum + p.amount, 0);
 
+  const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
+
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case PaymentStatus.PAID:
@@ -101,55 +106,83 @@ export default function PaymentsPage() {
     });
   };
 
+  if (!user) return null;
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading payments...</div>
+      <div className="flex min-h-screen bg-gray-50">
+        <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex-1 flex flex-col md:ml-64">
+          <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
+          <main className="flex-1 flex items-center justify-center">
+            <div className="text-lg">Loading payments...</div>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Payments</h1>
-          <p className="text-gray-600">View and manage your payment records</p>
+    <div className="flex min-h-screen bg-gray-50">
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col md:ml-64">
+        <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">Payments</h1>
+                <p className="text-gray-600">View and manage your payment records</p>
+              </div>
+            </div>
+
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {formatCurrency(totalEarned)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {payments.length} total payments
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(totalPaid)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {payments.filter(p => p.status === PaymentStatus.PAID).length} payments
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Unpaid</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(totalUnpaid)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {payments.filter(p => p.status === PaymentStatus.UNPAID).length} payments
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalPaid)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {payments.filter(p => p.status === PaymentStatus.PAID).length} payments
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Unpaid</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(totalUnpaid)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {payments.filter(p => p.status === PaymentStatus.UNPAID).length} payments
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Payments Table */}
       <Card>
@@ -212,6 +245,9 @@ export default function PaymentsPage() {
           )}
         </CardContent>
       </Card>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

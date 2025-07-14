@@ -87,6 +87,7 @@ export interface IStorage {
   // Payment methods
   getPayment(id: number): Promise<Payment | undefined>;
   getPaymentsByUser(userId: number): Promise<Payment[]>;
+  getAllPayments(): Promise<Payment[]>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined>;
   deletePayment(id: number): Promise<void>;
@@ -429,6 +430,10 @@ export class MemStorage implements IStorage {
     return [];
   }
 
+  async getAllPayments(): Promise<Payment[]> {
+    return [];
+  }
+
   async createPayment(payment: InsertPayment): Promise<Payment> {
     throw new Error("Payment methods not supported in MemStorage");
   }
@@ -707,6 +712,28 @@ export class DatabaseStorage implements IStorage {
     .from(payments)
     .innerJoin(tasks, eq(payments.taskId, tasks.id))
     .where(eq(payments.userId, userId))
+    .orderBy(desc(payments.createdAt));
+  }
+
+  async getAllPayments(): Promise<Payment[]> {
+    return await db.select({
+      id: payments.id,
+      taskId: payments.taskId,
+      userId: payments.userId,
+      amount: payments.amount,
+      status: payments.status,
+      paidAt: payments.paidAt,
+      createdAt: payments.createdAt,
+      task: {
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        clientName: tasks.clientName,
+      }
+    })
+    .from(payments)
+    .innerJoin(tasks, eq(payments.taskId, tasks.id))
     .orderBy(desc(payments.createdAt));
   }
 

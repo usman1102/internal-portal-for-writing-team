@@ -9,7 +9,11 @@ export async function getPayments(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const payments = await storage.getPaymentsByUser(userId);
+    // If user is superadmin, get all payments; otherwise get user's payments
+    const payments = req.user?.role === UserRole.SUPERADMIN 
+      ? await storage.getAllPayments()
+      : await storage.getPaymentsByUser(userId);
+    
     res.json(payments);
   } catch (error) {
     console.error("Error fetching payments:", error);
