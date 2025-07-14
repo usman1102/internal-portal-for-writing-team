@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
+import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole, PaymentStatus } from "@shared/schema";
 import { z } from "zod";
 import { registerNotificationRoutes } from "./notification-routes";
 import { getPayments, getPaymentsByUser, updatePaymentStatus } from "./payment-routes";
@@ -449,11 +449,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTask = await storage.updateTask(taskId, updateData);
       
-      // Handle budget changes and create payment records
-      if (updatedTask) {
-        // Check if writer budget was set and writer is assigned
-        if (updateData.writerBudget && updateData.writerBudget !== task.writerBudget && updatedTask.assignedToId) {
-          // Check if payment already exists for this task and writer
+      // Handle payment creation when task is completed or submitted
+      if (updatedTask && req.body.status && (req.body.status === 'COMPLETED' || req.body.status === 'SUBMITTED')) {
+        // Create payment for writer if assigned and has budget
+        if (updatedTask.assignedToId && updatedTask.writerBudget && updatedTask.writerBudget > 0) {
           const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
           const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
           
@@ -461,16 +460,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createPayment({
               taskId: taskId,
               userId: updatedTask.assignedToId,
-              amount: updateData.writerBudget,
+              amount: updatedTask.writerBudget,
               status: PaymentStatus.UNPAID,
               paidAt: null
             });
           }
         }
 
-        // Check if proofreader budget was set and proofreader is assigned
-        if (updateData.proofreaderBudget && updateData.proofreaderBudget !== task.proofreaderBudget && updatedTask.proofreaderId) {
-          // Check if payment already exists for this task and proofreader
+        // Create payment for proofreader if assigned and has budget
+        if (updatedTask.proofreaderId && updatedTask.proofreaderBudget && updatedTask.proofreaderBudget > 0) {
           const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
           const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
           
@@ -478,16 +476,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createPayment({
               taskId: taskId,
               userId: updatedTask.proofreaderId,
-              amount: updateData.proofreaderBudget,
+              amount: updatedTask.proofreaderBudget,
               status: PaymentStatus.UNPAID,
               paidAt: null
             });
           }
         }
 
-        // Check if team lead budget was set and task has a creator (team lead)
-        if (updateData.tlBudget && updateData.tlBudget !== task.tlBudget && updatedTask.assignedById) {
-          // Check if payment already exists for this task and team lead
+        // Create payment for team lead if has budget
+        if (updatedTask.assignedById && updatedTask.tlBudget && updatedTask.tlBudget > 0) {
           const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedById);
           const hasTeamLeadPayment = existingPayments.some(p => p.taskId === taskId);
           
@@ -495,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createPayment({
               taskId: taskId,
               userId: updatedTask.assignedById,
-              amount: updateData.tlBudget,
+              amount: updatedTask.tlBudget,
               status: PaymentStatus.UNPAID,
               paidAt: null
             });
@@ -521,44 +518,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await notificationService.notifyTaskStatusChanged(updatedTask!, req.body.status, req.user.id);
       }
 
-      // Handle task assignment and create payment records if budget exists
-      if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId && updatedTask) {
-        // Check if writer budget exists and create payment for newly assigned writer
-        if (updatedTask.writerBudget && updatedTask.writerBudget > 0) {
-          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
-          const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
-          
-          if (!hasWriterPayment) {
-            await storage.createPayment({
-              taskId: taskId,
-              userId: updatedTask.assignedToId,
-              amount: updatedTask.writerBudget,
-              status: PaymentStatus.UNPAID,
-              paidAt: null
-            });
-          }
-        }
-        
+      // Send notification for task assignment if assignedToId was updated
+      if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
         await notificationService.notifyTaskAssigned(updatedTask!, req.user.id);
-      }
-
-      // Handle proofreader assignment and create payment records if budget exists
-      if (req.body.proofreaderId && req.body.proofreaderId !== task.proofreaderId && updatedTask) {
-        // Check if proofreader budget exists and create payment for newly assigned proofreader
-        if (updatedTask.proofreaderBudget && updatedTask.proofreaderBudget > 0) {
-          const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
-          const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
-          
-          if (!hasProofreaderPayment) {
-            await storage.createPayment({
-              taskId: taskId,
-              userId: updatedTask.proofreaderId,
-              amount: updatedTask.proofreaderBudget,
-              status: PaymentStatus.UNPAID,
-              paidAt: null
-            });
-          }
-        }
       }
       
       res.json(updatedTask);

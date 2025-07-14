@@ -150,6 +150,13 @@ Changelog:
   * Implemented role-based access control for budget fields (superadmin and relevant team leads only)
   * Updated database schema with new task columns
   * Enhanced task editing interface with responsive grid layout for assignments and budgets
+- July 14, 2025. Implemented payment system with budget integration:
+  * Payment records are automatically created when tasks are marked as COMPLETED or SUBMITTED
+  * Writer payments created based on writer_budget when writer is assigned
+  * Proofreader payments created based on proofreader_budget when proofreader is assigned
+  * Team lead payments created based on tl_budget for task creator
+  * All payments default to UNPAID status and are sorted by task ID in ascending order
+  * Payment amounts reflect the budgets set in the edit task dialog (default 0 PKR)
 ```
 
 ## User Preferences
