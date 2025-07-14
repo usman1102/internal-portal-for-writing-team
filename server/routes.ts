@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 import { registerNotificationRoutes } from "./notification-routes";
+import { getPayments, updatePaymentStatus } from "./payment-routes";
 import { notificationService } from "./notification-service";
 
 
@@ -888,7 +889,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment routes
+  app.get("/api/payments", async (req, res, next) => {
+    try {
+      await getPayments(req, res);
+    } catch (error) {
+      next(error);
+    }
+  });
 
+  app.patch("/api/payments/:id", async (req, res, next) => {
+    try {
+      await updatePaymentStatus(req, res);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   const httpServer = createServer(app);
 

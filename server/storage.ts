@@ -6,6 +6,7 @@ import {
   activities, 
   notifications,
   teams,
+  payments,
   type User, 
   type InsertUser,
   type Notification,
@@ -18,11 +19,13 @@ import {
   type InsertComment,
   type Activity,
   type InsertActivity,
-
+  type Payment,
+  type InsertPayment,
   type Team,
   type InsertTeam,
   UserRole,
-  TaskStatus
+  TaskStatus,
+  PaymentStatus
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -81,7 +84,12 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<void>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
 
-
+  // Payment methods
+  getPayment(id: number): Promise<Payment | undefined>;
+  getPaymentsByUser(userId: number): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined>;
+  deletePayment(id: number): Promise<void>;
 
   // Team methods
   getTeam(id: number): Promise<Team | undefined>;
@@ -411,6 +419,27 @@ export class MemStorage implements IStorage {
   async markAllNotificationsAsRead(userId: number): Promise<void> {
     // Not implemented for MemStorage
   }
+
+  // Payment methods (placeholder implementations)
+  async getPayment(id: number): Promise<Payment | undefined> {
+    return undefined;
+  }
+
+  async getPaymentsByUser(userId: number): Promise<Payment[]> {
+    return [];
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    throw new Error("Payment methods not supported in MemStorage");
+  }
+
+  async updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined> {
+    return undefined;
+  }
+
+  async deletePayment(id: number): Promise<void> {
+    // Not implemented for MemStorage
+  }
 }
 
 // PostgreSQL Database Storage Implementation
@@ -650,6 +679,58 @@ export class DatabaseStorage implements IStorage {
     await db.update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.userId, userId));
+  }
+
+  // Payment methods
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || undefined;
+  }
+
+  async getPaymentsByUser(userId: number): Promise<Payment[]> {
+    return await db.select({
+      id: payments.id,
+      taskId: payments.taskId,
+      userId: payments.userId,
+      amount: payments.amount,
+      status: payments.status,
+      paidAt: payments.paidAt,
+      createdAt: payments.createdAt,
+      task: {
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        clientName: tasks.clientName,
+      }
+    })
+    .from(payments)
+    .innerJoin(tasks, eq(payments.taskId, tasks.id))
+    .where(eq(payments.userId, userId))
+    .orderBy(desc(payments.createdAt));
+  }
+
+  async createPayment(paymentData: InsertPayment): Promise<Payment> {
+    const [payment] = await db
+      .insert(payments)
+      .values(paymentData as any)
+      .returning();
+    return payment;
+  }
+
+  async updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined> {
+    const [payment] = await db.update(payments)
+      .set({ 
+        status,
+        paidAt: status === PaymentStatus.PAID ? new Date() : null
+      })
+      .where(eq(payments.id, id))
+      .returning();
+    return payment || undefined;
+  }
+
+  async deletePayment(id: number): Promise<void> {
+    await db.delete(payments).where(eq(payments.id, id));
   }
 }
 

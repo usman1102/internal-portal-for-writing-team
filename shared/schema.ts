@@ -120,6 +120,23 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Payment Status
+export enum PaymentStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID'
+}
+
+// Payments schema
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  amount: doublePrecision("amount").notNull(),
+  status: text("status").$type<PaymentStatus>().default(PaymentStatus.UNPAID),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 // Schema validation with Zod
@@ -156,6 +173,10 @@ export type Activity = typeof activities.$inferSelect;
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, paidAt: true });
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Payment = typeof payments.$inferSelect;
 
 
 

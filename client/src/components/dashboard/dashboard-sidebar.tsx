@@ -10,7 +10,8 @@ import {
   ClipboardList,
   Folder,
   Users,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from "lucide-react";
 import { UserProfileDialog } from "@/components/user/user-profile-dialog";
 
@@ -128,6 +129,14 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
               Team
             </SidebarLink>
           )}
+
+          <SidebarLink 
+            href="/payments" 
+            icon={<CreditCard size={18} />} 
+            active={location === '/payments'}
+          >
+            Payments
+          </SidebarLink>
 
 
         </nav>
