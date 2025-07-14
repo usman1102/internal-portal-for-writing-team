@@ -130,13 +130,15 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
             </SidebarLink>
           )}
 
-          <SidebarLink 
-            href="/payments" 
-            icon={<CreditCard size={18} />} 
-            active={location === '/payments'}
-          >
-            Payments
-          </SidebarLink>
+          {user.role !== UserRole.SALES && (
+            <SidebarLink 
+              href="/payments" 
+              icon={<CreditCard size={18} />} 
+              active={location === '/payments'}
+            >
+              Payments
+            </SidebarLink>
+          )}
 
 
         </nav>
