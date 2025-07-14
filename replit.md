@@ -157,6 +157,14 @@ Changelog:
   * Team lead payments created based on tl_budget for task creator
   * All payments default to UNPAID status and are sorted by task ID in ascending order
   * Payment amounts reflect the budgets set in the edit task dialog (default 0 PKR)
+- July 14, 2025. Enhanced payment system with dynamic status-based management:
+  * Payment records are automatically deleted when task status changes from COMPLETED/SUBMITTED to any other status
+  * Payment records are automatically created when task status changes to COMPLETED/SUBMITTED
+  * Enhanced duplicate prevention using task-based payment checking
+  * Budget updates automatically reflect in existing payment amounts
+  * Team leads can now edit budget fields for any task (not just their created tasks)
+  * Added Beta badges to payment pages indicating feature is under development
+  * Fixed user payments page access control for proper team lead permissions
 ```
 
 ## User Preferences
