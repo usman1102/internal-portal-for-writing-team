@@ -67,11 +67,13 @@ import {
   Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function TeamPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [, navigate] = useLocation();
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isEditMemberOpen, setIsEditMemberOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -1249,6 +1251,16 @@ export default function TeamPage() {
               {selectedUser.role === UserRole.WRITER && (
                 <Button>
                   View All Tasks
+                </Button>
+              )}
+              {(selectedUser.role === UserRole.WRITER || selectedUser.role === UserRole.PROOFREADER) && (
+                <Button
+                  onClick={() => {
+                    navigate(`/user-payments?userId=${selectedUser.id}`);
+                    setIsUserDetailsOpen(false);
+                  }}
+                >
+                  View Payment
                 </Button>
               )}
             </DialogFooter>

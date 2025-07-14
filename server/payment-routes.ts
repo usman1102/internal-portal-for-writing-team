@@ -21,6 +21,55 @@ export async function getPayments(req: Request, res: Response) {
   }
 }
 
+export async function getPaymentsByUser(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+    const currentUser = req.user;
+    
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Check if user has permission to view this user's payments
+    const targetUserId = parseInt(userId);
+    
+    // Superadmin can view all payments
+    if (currentUser.role === UserRole.SUPERADMIN) {
+      const payments = await storage.getPaymentsByUser(targetUserId);
+      return res.json(payments);
+    }
+
+    // Team leads can view their team members' payments
+    if (currentUser.role === UserRole.TEAM_LEAD) {
+      // Get the target user to check team membership
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Check if the target user is in the team that this user leads
+      const teams = await storage.getTeamsByLeader(currentUser.id);
+      const teamIds = teams.map(team => team.id);
+      
+      if (targetUser.teamId && teamIds.includes(targetUser.teamId)) {
+        const payments = await storage.getPaymentsByUser(targetUserId);
+        return res.json(payments);
+      }
+    }
+
+    // Users can only view their own payments
+    if (currentUser.id === targetUserId) {
+      const payments = await storage.getPaymentsByUser(targetUserId);
+      return res.json(payments);
+    }
+
+    return res.status(403).json({ error: "Access denied" });
+  } catch (error) {
+    console.error("Error fetching user payments:", error);
+    res.status(500).json({ error: "Failed to fetch user payments" });
+  }
+}
+
 export async function updatePaymentStatus(req: Request, res: Response) {
   try {
     const { id } = req.params;

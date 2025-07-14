@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertTaskSchema, insertFileSchema, insertCommentSchema, insertActivitySchema, insertUserSchema, insertTeamSchema, UserRole } from "@shared/schema";
 import { z } from "zod";
 import { registerNotificationRoutes } from "./notification-routes";
-import { getPayments, updatePaymentStatus } from "./payment-routes";
+import { getPayments, getPaymentsByUser, updatePaymentStatus } from "./payment-routes";
 import { notificationService } from "./notification-service";
 
 
@@ -63,6 +63,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get("/api/users/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+      
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Check permissions - users can view their own profile, superadmin can view all, team leads can view team members
+      if (req.user?.id === userId || req.user?.role === UserRole.SUPERADMIN || req.user?.role === UserRole.TEAM_LEAD) {
+        // Hide sensitive data like password
+        const { password, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
+      } else {
+        return res.status(403).send("Unauthorized to view this user");
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/users", async (req, res, next) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
@@ -898,7 +922,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/payments/:id", async (req, res, next) => {
+  app.get("/api/payments/user/:userId", async (req, res, next) => {
+    try {
+      await getPaymentsByUser(req, res);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/payments/:id/status", async (req, res, next) => {
     try {
       await updatePaymentStatus(req, res);
     } catch (error) {
