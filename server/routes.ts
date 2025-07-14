@@ -447,6 +447,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Unauthorized to update this task");
       }
       
+      // Handle payment deletion when task status is changed away from COMPLETED/SUBMITTED
+      if (req.body.status && req.body.status !== 'COMPLETED' && req.body.status !== 'SUBMITTED' && task.status && (task.status === 'COMPLETED' || task.status === 'SUBMITTED')) {
+        // Remove payment records for this task
+        const allPayments = await storage.getAllPayments();
+        const taskPayments = allPayments.filter(p => p.taskId === taskId);
+        
+        for (const payment of taskPayments) {
+          await storage.deletePayment(payment.id);
+        }
+      }
+      
       const updatedTask = await storage.updateTask(taskId, updateData);
       
       // Handle payment updates when budget amounts are changed
@@ -482,17 +493,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           }
-        }
-      }
-
-      // Handle payment deletion when task status is changed away from COMPLETED/SUBMITTED
-      if (updatedTask && req.body.status && req.body.status !== 'COMPLETED' && req.body.status !== 'SUBMITTED' && task.status && (task.status === 'COMPLETED' || task.status === 'SUBMITTED')) {
-        // Remove payment records for this task
-        const allPayments = await storage.getAllPayments();
-        const taskPayments = allPayments.filter(p => p.taskId === taskId);
-        
-        for (const payment of taskPayments) {
-          await storage.deletePayment(payment.id);
         }
       }
       
