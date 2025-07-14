@@ -110,12 +110,17 @@ export default function PaymentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex h-screen bg-gray-100">
         <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="flex-1 flex flex-col md:ml-64">
-          <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 flex items-center justify-center">
-            <div className="text-lg">Loading payments...</div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHeader 
+            title="Payments" 
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          />
+          <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
+            <div className="flex items-center justify-center min-h-full">
+              <div className="text-lg">Loading payments...</div>
+            </div>
           </main>
         </div>
       </div>
@@ -123,11 +128,14 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col md:ml-64">
-        <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader 
+          title="Payments" 
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
+        <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
