@@ -449,6 +449,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTask = await storage.updateTask(taskId, updateData);
       
+      // Handle budget changes and create payment records
+      if (updatedTask) {
+        // Check if writer budget was set and writer is assigned
+        if (updateData.writerBudget && updateData.writerBudget !== task.writerBudget && updatedTask.assignedToId) {
+          // Check if payment already exists for this task and writer
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
+          const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
+          
+          if (!hasWriterPayment) {
+            await storage.createPayment({
+              taskId: taskId,
+              userId: updatedTask.assignedToId,
+              amount: updateData.writerBudget,
+              status: PaymentStatus.UNPAID,
+              paidAt: null
+            });
+          }
+        }
+
+        // Check if proofreader budget was set and proofreader is assigned
+        if (updateData.proofreaderBudget && updateData.proofreaderBudget !== task.proofreaderBudget && updatedTask.proofreaderId) {
+          // Check if payment already exists for this task and proofreader
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
+          const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
+          
+          if (!hasProofreaderPayment) {
+            await storage.createPayment({
+              taskId: taskId,
+              userId: updatedTask.proofreaderId,
+              amount: updateData.proofreaderBudget,
+              status: PaymentStatus.UNPAID,
+              paidAt: null
+            });
+          }
+        }
+
+        // Check if team lead budget was set and task has a creator (team lead)
+        if (updateData.tlBudget && updateData.tlBudget !== task.tlBudget && updatedTask.assignedById) {
+          // Check if payment already exists for this task and team lead
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedById);
+          const hasTeamLeadPayment = existingPayments.some(p => p.taskId === taskId);
+          
+          if (!hasTeamLeadPayment) {
+            await storage.createPayment({
+              taskId: taskId,
+              userId: updatedTask.assignedById,
+              amount: updateData.tlBudget,
+              status: PaymentStatus.UNPAID,
+              paidAt: null
+            });
+          }
+        }
+      }
+      
       // Create activity entry for status change if that's what was updated
       if (req.body.status && req.body.status !== task.status) {
         let action = 'STATUS_UPDATED';
@@ -467,9 +521,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await notificationService.notifyTaskStatusChanged(updatedTask!, req.body.status, req.user.id);
       }
 
-      // Send notification for task assignment if assignedToId was updated
-      if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId) {
+      // Handle task assignment and create payment records if budget exists
+      if (req.body.assignedToId && req.body.assignedToId !== task.assignedToId && updatedTask) {
+        // Check if writer budget exists and create payment for newly assigned writer
+        if (updatedTask.writerBudget && updatedTask.writerBudget > 0) {
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
+          const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
+          
+          if (!hasWriterPayment) {
+            await storage.createPayment({
+              taskId: taskId,
+              userId: updatedTask.assignedToId,
+              amount: updatedTask.writerBudget,
+              status: PaymentStatus.UNPAID,
+              paidAt: null
+            });
+          }
+        }
+        
         await notificationService.notifyTaskAssigned(updatedTask!, req.user.id);
+      }
+
+      // Handle proofreader assignment and create payment records if budget exists
+      if (req.body.proofreaderId && req.body.proofreaderId !== task.proofreaderId && updatedTask) {
+        // Check if proofreader budget exists and create payment for newly assigned proofreader
+        if (updatedTask.proofreaderBudget && updatedTask.proofreaderBudget > 0) {
+          const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
+          const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
+          
+          if (!hasProofreaderPayment) {
+            await storage.createPayment({
+              taskId: taskId,
+              userId: updatedTask.proofreaderId,
+              amount: updatedTask.proofreaderBudget,
+              status: PaymentStatus.UNPAID,
+              paidAt: null
+            });
+          }
+        }
       }
       
       res.json(updatedTask);
