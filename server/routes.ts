@@ -451,8 +451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Handle payment creation when task is completed or submitted
       if (updatedTask && req.body.status && (req.body.status === 'COMPLETED' || req.body.status === 'SUBMITTED')) {
-        // Create payment for writer if assigned and has budget
-        if (updatedTask.assignedToId && updatedTask.writerBudget && updatedTask.writerBudget > 0) {
+        // Create payment for writer if assigned
+        if (updatedTask.assignedToId) {
           const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedToId);
           const hasWriterPayment = existingPayments.some(p => p.taskId === taskId);
           
@@ -460,15 +460,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createPayment({
               taskId: taskId,
               userId: updatedTask.assignedToId,
-              amount: updatedTask.writerBudget,
+              amount: updatedTask.writerBudget || 0,
               status: PaymentStatus.UNPAID,
               paidAt: null
             });
           }
         }
 
-        // Create payment for proofreader if assigned and has budget
-        if (updatedTask.proofreaderId && updatedTask.proofreaderBudget && updatedTask.proofreaderBudget > 0) {
+        // Create payment for proofreader if assigned
+        if (updatedTask.proofreaderId) {
           const existingPayments = await storage.getPaymentsByUser(updatedTask.proofreaderId);
           const hasProofreaderPayment = existingPayments.some(p => p.taskId === taskId);
           
@@ -476,26 +476,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createPayment({
               taskId: taskId,
               userId: updatedTask.proofreaderId,
-              amount: updatedTask.proofreaderBudget,
+              amount: updatedTask.proofreaderBudget || 0,
               status: PaymentStatus.UNPAID,
               paidAt: null
             });
           }
         }
 
-        // Create payment for team lead if has budget
-        if (updatedTask.assignedById && updatedTask.tlBudget && updatedTask.tlBudget > 0) {
-          const existingPayments = await storage.getPaymentsByUser(updatedTask.assignedById);
-          const hasTeamLeadPayment = existingPayments.some(p => p.taskId === taskId);
-          
-          if (!hasTeamLeadPayment) {
-            await storage.createPayment({
-              taskId: taskId,
-              userId: updatedTask.assignedById,
-              amount: updatedTask.tlBudget,
-              status: PaymentStatus.UNPAID,
-              paidAt: null
-            });
+        // Create payment for team lead (writer's team lead) if writer is assigned
+        if (updatedTask.assignedToId) {
+          const writer = await storage.getUser(updatedTask.assignedToId);
+          if (writer && writer.teamId) {
+            const team = await storage.getTeam(writer.teamId);
+            if (team && team.teamLeadId) {
+              const existingPayments = await storage.getPaymentsByUser(team.teamLeadId);
+              const hasTeamLeadPayment = existingPayments.some(p => p.taskId === taskId);
+              
+              if (!hasTeamLeadPayment) {
+                await storage.createPayment({
+                  taskId: taskId,
+                  userId: team.teamLeadId,
+                  amount: updatedTask.tlBudget || 0,
+                  status: PaymentStatus.UNPAID,
+                  paidAt: null
+                });
+              }
+            }
           }
         }
       }
