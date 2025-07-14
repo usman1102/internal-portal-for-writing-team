@@ -449,11 +449,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Handle payment deletion when task status is changed away from COMPLETED/SUBMITTED
       if (req.body.status && req.body.status !== 'COMPLETED' && req.body.status !== 'SUBMITTED' && task.status && (task.status === 'COMPLETED' || task.status === 'SUBMITTED')) {
+        console.log(`Deleting payments for task ${taskId} - changing from ${task.status} to ${req.body.status}`);
         // Remove payment records for this task
         const allPayments = await storage.getAllPayments();
         const taskPayments = allPayments.filter(p => p.taskId === taskId);
         
+        console.log(`Found ${taskPayments.length} payments to delete for task ${taskId}`);
         for (const payment of taskPayments) {
+          console.log(`Deleting payment ${payment.id} for user ${payment.userId}`);
           await storage.deletePayment(payment.id);
         }
       }
